@@ -1,0 +1,276 @@
+app:
+  description: 用自然语言提问，获得实时查询结果和分析报告
+  icon: 🤖
+  icon_background: '#FFEAD5'
+  mode: workflow
+  name: 宝可梦dify
+  use_icon_as_answer_icon: false
+kind: app
+version: 0.1.5
+workflow:
+  conversation_variables: [ ]
+  environment_variables: [ ]
+  features:
+    file_upload:
+      allowed_file_extensions:
+        - .JPG
+        - .JPEG
+        - .PNG
+        - .GIF
+        - .WEBP
+        - .SVG
+      allowed_file_types:
+        - image
+      allowed_file_upload_methods:
+        - local_file
+        - remote_url
+      enabled: false
+      fileUploadConfig:
+        audio_file_size_limit: 50
+        batch_count_limit: 5
+        file_size_limit: 15
+        image_file_size_limit: 10
+        video_file_size_limit: 100
+        workflow_file_upload_limit: 10
+      image:
+        enabled: false
+        number_limits: 3
+        transfer_methods:
+          - local_file
+          - remote_url
+      number_limits: 3
+    opening_statement: ''
+    retriever_resource:
+      enabled: false
+    sensitive_word_avoidance:
+      enabled: false
+    speech_to_text:
+      enabled: false
+    suggested_questions: [ ]
+    suggested_questions_after_answer:
+      enabled: false
+    text_to_speech:
+      enabled: false
+      language: ''
+      voice: ''
+  graph:
+    edges:
+      - data:
+          isInIteration: false
+          sourceType: llm
+          targetType: end
+        id: 1722868180264-source-1722834612833-target
+        selected: false
+        source: '1722868180264'
+        sourceHandle: source
+        target: '1722834612833'
+        targetHandle: target
+        type: custom
+        zIndex: 0
+      - data:
+          isInIteration: false
+          sourceType: code
+          targetType: llm
+        id: 1724233823809-source-1722868180264-target
+        selected: false
+        source: '1724233823809'
+        sourceHandle: source
+        target: '1722868180264'
+        targetHandle: target
+        type: custom
+        zIndex: 0
+      - data:
+          isInIteration: false
+          sourceType: start
+          targetType: code
+        id: 1722834384302-source-1724233823809-target
+        source: '1722834384302'
+        sourceHandle: source
+        target: '1724233823809'
+        targetHandle: target
+        type: custom
+        zIndex: 0
+    nodes:
+      - data:
+          desc: ''
+          selected: false
+          title: 开始
+          type: start
+          variables:
+            - label: 查询问题
+              max_length: 256
+              options: [ ]
+              required: true
+              type: text-input
+              variable: question
+        height: 90
+        id: '1722834384302'
+        position:
+          x: -1141.8236062604233
+          y: -356.5568495024244
+        positionAbsolute:
+          x: -1141.8236062604233
+          y: -356.5568495024244
+        selected: true
+        sourcePosition: right
+        targetPosition: left
+        type: custom
+        width: 244
+      - data:
+          desc: ''
+          outputs:
+            - value_selector:
+                - '1722868180264'
+                - text
+              variable: text
+          selected: false
+          title: 结束
+          type: end
+        height: 90
+        id: '1722834612833'
+        position:
+          x: 23.292127619741507
+          y: -372.21253220766187
+        positionAbsolute:
+          x: 23.292127619741507
+          y: -372.21253220766187
+        selected: false
+        sourcePosition: right
+        targetPosition: left
+        type: custom
+        width: 244
+      - data:
+          context:
+            enabled: false
+            variable_selector: [ ]
+          desc: ''
+          model:
+            completion_params:
+              keep_alive: 24h
+              max_tokens: 4095
+              seed: 116
+            mode: chat
+            name: glm-4-plus
+            provider: zhipuai
+          prompt_template:
+            - id: 547cfa38-27a3-49df-a92e-d5d4ddad847f
+              role: system
+              text: '你是宝可梦问答领域的数据分析专家。分析JSON格式的Cypher查询结果，回答用户问题。
+
+
+            关键规则：
+
+            1. 所有数据已符合用户问题中的条件（如产品类型、日期范围）
+
+            2. 直接使用提供的数据分析，不质疑数据是否符合条件
+
+            3. 不需再次筛选或确认数据类别/时间范围
+
+            4. 数据为[]或空时，回复"没有查询到相关数据"，不得编造数据'
+            - id: 0f6e42cd-f64e-438b-a0d3-de721b8327a6
+              role: user
+              text: '数据是:{{#1724233823809.result#}}
+
+            问题是:{{#1722834384302.question#}}
+
+
+            回答要求：
+
+            1. 列出详细数据,优先以表格方式列出数据， 需要列出全部记录
+
+            2.当有记录被省略时，必须作出说明
+
+            3. 对数据进行概览和总结，必须包括原始数据的总记录数
+
+            4. 识别趋势、异常，并提供分析和建议
+
+
+            数据处理：
+
+            - 面积、产量单位：平方米，保留整数
+
+            - 使用逗号计数法：1,234,567
+
+            - 其他数值保留2位小数
+
+            - 对于比例、占比以及含义类似的字段，显示为百分比，例如：将0.1236显示为12.36%，保留两位小数
+
+            - 日期的显示格式为：YYYY-MM-DD，例如：2024-08-01
+
+            - 确保使用了正确的markdown语法，特别是标题和表格
+
+
+            注意：
+
+            - 不要输出中间的分析过程和计算方法,只需要按要求输出结果即可
+
+            - 数据为[]或空时，回复"没有查询到相关数据"
+
+            - 记住：所有数据都符合用户问题条件，直接分析提供的数据。
+
+            - 认真检查是否按照要求的格式正确显示了数据
+
+            - 用中文回答问题'
+          selected: false
+          title: 结果分析
+          type: llm
+          variables: [ ]
+          vision:
+            enabled: false
+        height: 98
+        id: '1722868180264'
+        position:
+          x: -398.2693026427766
+          y: -372.21253220766187
+        positionAbsolute:
+          x: -398.2693026427766
+          y: -372.21253220766187
+        selected: false
+        sourcePosition: right
+        targetPosition: left
+        type: custom
+        width: 244
+      - data:
+          code: "import urllib.request\nimport json\n\ndef main(question: str) -> dict:\n\
+          \    # Flask 服务端点\n    api_url = \"http://192.168.1.9:5203/execute_query\"\
+          \n\n    # 请求体\n    payload = {\n        \"question\": question  # 发送问句字符串而非\
+          \ Cypher 查询语句\n    }\n\n    # 将请求体转换为 JSON 字符串\n    data = json.dumps(payload).encode('utf-8')\n\
+          \n    # 创建请求对象\n    req = urllib.request.Request(api_url, data=data, headers={\"\
+          Content-Type\": \"application/json\"})\n\n    try:\n        # 发送请求并获取响应\n\
+          \        with urllib.request.urlopen(req) as response:\n            # 读取并解码响应\n\
+          \            result_data = json.loads(response.read().decode('utf-8'))\n\
+          \            # 将结果转换为字符串格式\n            result_str = json.dumps(result_data,\
+          \ ensure_ascii=False)  # 确保中文字符正常显示\n            return {'result': result_str}\
+          \  # 返回字符串类型的结果\n    except Exception as e:\n        raise Exception(f\"\
+          Error: {str(e)}\")\n"
+          code_language: python3
+          desc: ''
+          outputs:
+            result:
+              children: null
+              type: string
+          selected: false
+          title: 执行查询
+          type: code
+          variables:
+            - value_selector:
+                - '1722834384302'
+                - question
+              variable: question
+        height: 54
+        id: '1724233823809'
+        position:
+          x: -770.226793663037
+          y: -342.453759358466
+        positionAbsolute:
+          x: -770.226793663037
+          y: -342.453759358466
+        selected: false
+        sourcePosition: right
+        targetPosition: left
+        type: custom
+        width: 244
+    viewport:
+      x: 1009.5828127670399
+      y: 472.11182201495683
+      zoom: 0.5672515681555873

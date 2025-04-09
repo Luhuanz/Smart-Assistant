@@ -74,3 +74,20 @@ class RAGFlowTxtParser:
             add_chunk(sec)
 
         return [[c, ""] for c in cks]
+
+
+if __name__ == "__main__":
+    import sys
+
+    # 传入txt路径
+    file_path = "/data/Langagent/deepdoc/data/identity.txt"
+    if len(sys.argv) > 1:
+        file_path = sys.argv[1]
+    parser = RAGFlowTxtParser()
+    # 解析txt文件
+    chunks = parser(file_path, chunk_token_num=128)
+    print(f"📄 共切分出 {len(chunks)} 个段落：")
+    for i, (text, _) in enumerate(chunks):
+        print(f"\n=== Chunk {i + 1} ===")
+        print(f"内容（前60字）: {text[:60]}...")
+        print(f"Token 数量: {num_tokens_from_string(text)}")

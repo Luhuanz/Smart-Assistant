@@ -1,5 +1,4 @@
 import logging
-import os
 import time
 from datetime import datetime, timedelta
 from typing import List, Dict, Optional
@@ -130,7 +129,7 @@ class IndustrialWebSearcher:
         利用 MilvusService 将搜索结果插入向量库，并基于向量相似性进行重排序与去重。
         返回语义上最相关的结果列表。
         """
-        # 转换为Document格式（假设 Document 结构包含page_content与metadata）
+        # 转换为Document格式
         documents = []
         for item in results:
             # page_content摘要或内容，metadata 中记录标题和URL等
@@ -202,8 +201,8 @@ class IndustrialWebSearcherLLM:
 
     def _combine_results(self, raw_results: List[Dict], reranked: List[Dict]) -> str:
         """
-        合并原始搜索结果（例如摘要）与 Milvus 重排序后的结果，生成最终的上下文字符串，
-        并通过 set 去重。
+        合并原始搜索结果（例如摘要）与Milvus 重排序后的结果，生成最终的上下文字符串，
+        并通过set去重。
         """
         combined_snippets = []
         # 提取原始结果摘要
@@ -228,7 +227,7 @@ class IndustrialWebSearcherLLM:
 
     async def search_and_generate(self, query: str, max_results: int = 3, search_depth: str = "basic") -> str:
         """
-        先利用 IndustrialWebSearcher 获取原始结果，再利用 Milvus 进行去重重排序，
+        先利用IndustrialWebSearcher获取原始结果，再利用Milvus进行去重重排序，
         最后基于合并的上下文使用 LLM 生成回复。
         """
         raw_results = self.searcher.perform_search(query, max_results=max_results, search_depth=search_depth)

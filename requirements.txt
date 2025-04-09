@@ -36,3 +36,4 @@ transformers==4.35.2
 tavily-python
 FlagEmbedding
 peft
+dashscope

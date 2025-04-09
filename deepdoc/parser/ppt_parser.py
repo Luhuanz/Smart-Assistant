@@ -57,7 +57,7 @@ class RAGFlowPptParser:
                     texts.append(t)
             return "\n".join(texts)
 
-    def __call__(self, fnm, from_page, to_page, callback=None):
+    def __call__(self, fnm, from_page=0, to_page=30, callback=None):
         ppt = Presentation(fnm) if isinstance(
             fnm, str) else Presentation(
             BytesIO(fnm))
@@ -83,18 +83,13 @@ class RAGFlowPptParser:
 
 
 if __name__ == "__main__":
-    # from RAGFlowPptParser import RAGFlowPptParser  模块导入
     parser = RAGFlowPptParser()
-
     ppt_path = "../data/love.pptx"
-
-    # 3. 指定提取的页码范围（例如：从第 1 页到第 5 页）
-    from_page = 0  # 注意：页码是从 0 开始的
+    # 3. 指定提取的页码范围
+    from_page = 0
     to_page = 5
-
     # 4. 调用解析器提取文本
     results = parser(ppt_path, from_page, to_page)
-
     # 5. 打印结果（每页一个段落）
     for i, page_text in enumerate(results, start=from_page):
         print(f"\n--- 第 {i + 1} 页 ---\n")

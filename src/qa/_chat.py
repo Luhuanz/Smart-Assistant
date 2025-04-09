@@ -18,7 +18,7 @@ sys.path.insert(0, str(project_root))
 # 本地模块导入
 from kg_agent import KGQueryAgent
 from rag import GraphRAG
-from api import WebSearcher
+from api.websearch import TavilyBasicSearcher, LiteWebSearcher
 
 
 # 辅助类

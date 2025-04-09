@@ -1,0 +1,21 @@
+[2025-04-09 16:15] [logger.py|_log] [line:74] INFO    : parse_file - Using PptParser for /data/Langagent/deepdoc/data/love.pptx
+[2025-04-09 16:16] [logger.py|_log] [line:74] INFO    : parse_file - Using PptParser for /data/Langagent/deepdoc/data/love.pptx
+[2025-04-09 16:17] [logger.py|_log] [line:74] INFO    : parse_file - Using PptParser for /data/Langagent/deepdoc/data/love.pptx
+[2025-04-09 16:17] [logger.py|_log] [line:74] INFO    : parse_file - Using PptParser for /data/Langagent/deepdoc/data/love.pptx
+[2025-04-09 16:17] [logger.py|_log] [line:74] INFO    : parse_file - Using PptParser for /data/Langagent/deepdoc/data/love.pptx
+[2025-04-09 16:17] [logger.py|_log] [line:74] INFO    : parse_file - Using PptParser for /data/Langagent/deepdoc/data/love.pptx
+[2025-04-09 16:26] [logger.py|_log] [line:74] INFO    : parse_file - Parsing /data/Langagent/deepdoc/data/love.pptx
+[2025-04-09 16:27] [logger.py|_log] [line:74] INFO    : parse_file - Using PptParser for /data/Langagent/deepdoc/data/love.pptx
+[2025-04-09 16:30] [logger.py|_log] [line:74] INFO    : parse_file - Using DocxParser for /data/Langagent/deepdoc/data/exmaple.docx
+[2025-04-09 16:31] [logger.py|_log] [line:74] INFO    : parse_file - Using PdfParser for /data/Langagent/deepdoc/data/picture.pdf
+[2025-04-09 16:32] [logger.py|_log] [line:74] INFO    : parse_file - Using PdfParser for /data/Langagent/deepdoc/data/ttt.pdf
+[2025-04-09 16:33] [logger.py|_log] [line:74] INFO    : parse_file - Using PdfParser for /data/Langagent/resources/data/example/test1.pdf
+[2025-04-09 16:33] [logger.py|_log] [line:74] INFO    : parse_file - Using PdfParser for /data/Langagent/resources/data/example/test1.pdf
+[2025-04-09 16:35] [logger.py|_log] [line:74] INFO    : parse_file - Using PdfParser for /data/Langagent/resources/data/example/test1.pdf
+[2025-04-09 16:35] [logger.py|_log] [line:74] INFO    : parse_file - Using PdfParser for /data/Langagent/resources/data/example/test1.pdf
+[2025-04-09 16:36] [logger.py|_log] [line:74] INFO    : parse_file - Using PdfParser for /data/Langagent/resources/data/example/test1.pdf
+[2025-04-09 16:36] [logger.py|_log] [line:74] INFO    : parse_file - Using OCR pipeline for /data/Langagent/resources/data/example/test1.pdf
+[2025-04-09 16:38] [logger.py|_log] [line:74] INFO    : parse_file - Using simple read for /data/Langagent/deepdoc/data/identity.txt
+[2025-04-09 16:38] [logger.py|_log] [line:74] INFO    : parse_file - Using OCR pipeline for /data/Langagent/deepdoc/data/identity.txt
+[2025-04-09 16:38] [logger.py|_log] [line:74] INFO    : parse_file - Using simple read for /data/Langagent/deepdoc/data/identity.txt
+[2025-04-09 16:42] [logger.py|_log] [line:74] INFO    : parse_file - Using simple read for /data/Langagent/deepdoc/data/identity.txt

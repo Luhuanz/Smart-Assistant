@@ -139,3 +139,31 @@ class RAGFlowDocxParser:
 
         tbls = [self.__extract_table_content(tb) for tb in self.doc.tables]
         return secs, tbls
+
+
+if __name__ == "__main__":
+    # 1. 引入所需模块
+    import sys
+
+    # 2. 初始化解析器
+    parser = RAGFlowDocxParser()
+    # 3. 提供 docx 文件路径
+    docx_path = "/data/Langagent/deepdoc/data/exmaple.docx"
+    if len(sys.argv) > 1:
+        docx_path = sys.argv[1]
+
+    # 4. 调用解析器
+    paragraphs, tables = parser(docx_path)
+
+    # 5. 打印段落内容
+    print("=== 文本段落 ===")
+    for i, (text, style) in enumerate(paragraphs):
+        if text.strip():
+            print(f"[段落 {i + 1} - 样式: {style}]: {text}")
+
+    # 6. 打印表格内容
+    print("\n=== 表格内容 ===")
+    for i, table_lines in enumerate(tables):
+        print(f"\n[表格 {i + 1}]")
+        for line in table_lines:
+            print(line)

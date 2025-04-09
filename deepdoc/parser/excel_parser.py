@@ -185,15 +185,22 @@ class RAGFlowExcelParser:
 
 
 if __name__ == "__main__":
-    filepath = "example.xlsx"
+    filepath = "/data/Langagent/deepdoc/data/exmaple.xlsx"
     parser = RAGFlowExcelParser()
+
+    # 先把文件内容读进来（bytes）
+    with open(filepath, "rb") as f:
+        file_bytes = f.read()
+
     # 解析文本内容
-    lines = parser(filepath)
+    lines = parser(file_bytes)
     print("📄 表格内容：")
     for line in lines:
         print(line)
-    print("\n📊 HTML 分片（适合前端预览）:")
-    html_chunks = parser.html(filepath)
-    for idx, chunk in enumerate(html_chunks):
-        print(f"\n--- 第 {idx + 1} 块 ---")
-        print(chunk)
+
+    # # HTML 格式（适合前端预览）
+    # print("\n📊 HTML 分片（适合前端预览）:")
+    # html_chunks = parser.html(file_bytes)
+    # for idx, chunk in enumerate(html_chunks):
+    #     print(f"\n--- 第 {idx + 1} 块 ---")
+    #     print(chunk)

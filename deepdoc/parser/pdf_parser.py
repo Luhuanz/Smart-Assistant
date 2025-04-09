@@ -13,7 +13,9 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 #
+import warnings
 
+warnings.filterwarnings("ignore")
 import io
 import logging
 import os
@@ -34,7 +36,8 @@ from huggingface_hub import snapshot_download
 from pypdf import PdfReader as pdf2_read
 
 from src.models import rag_tokenizer
-from deepdoc.vision import OCR, LayoutRecognizer, Recognizer, TableStructureRecognizer
+from deepdoc.vision import OCR, LayoutRecognizer, TableStructureRecognizer
+from deepdoc.vision.recognizer import Recognizer
 
 LIGHTEN = int(os.getenv("LIGHTEN", "0"))  # 结果是 0
 PARALLEL_DEVICES = 0  # cuda torch
@@ -419,6 +422,7 @@ class RAGFlowPdfParser:
         start = timer()
         # 使用OCR模块检测图像中的文字框（检测阶段）
         bxs = self.ocr.detect(np.array(img), device_id)
+
         logging.info(f"__ocr detecting boxes of a image cost ({timer() - start}s)")
 
         start = timer()
@@ -481,6 +485,7 @@ class RAGFlowPdfParser:
 
         # 批量文本识别
         texts = self.ocr.recognize_batch([b["box_image"] for b in boxes_to_reg], device_id)
+
         for i in range(len(boxes_to_reg)):
             boxes_to_reg[i]["text"] = texts[i]
             del boxes_to_reg[i]["box_image"]
@@ -1492,23 +1497,21 @@ class VisionParser(RAGFlowPdfParser):
 
 
 if __name__ == "__main__":
-    # 创建解析器对象
     parser = RAGFlowPdfParser()
-    # PDF路径
-    pdf_path = "ex.pdf"  # TODO: PDF 文件路径
-    # 调用解析器，提取文本块 + 表格/图像
+    pdf_path = "/data/Langagent/deepdoc/data/picture.pdf"
+
     text_blocks, tables_and_figures = parser(pdf_path)
-    # 打印前几段文本内容
-    print("📄 文本内容预览：")
-    for i, t in enumerate(text_blocks[:3]):
-        print(f"\n第{i + 1}段内容：\n")
-        print(parser.remove_tag(t)[:500])  # 去掉定位标记后展示前 500 字
-    # 表格和图像总数
-    print(f"\n📊 表格或图像数量：{len(tables_and_figures)}")
-    # 将每一个图像保存到文件
-    output_dir = "output_images"
-    os.makedirs(output_dir, exist_ok=True)
-    for idx, (img, _) in enumerate(tables_and_figures):
-        img_path = os.path.join(output_dir, f"table_or_fig_{idx + 1}.png")
-        img.save(img_path)
-        print(f"✅ 已保存图像：{img_path}")
+
+    # 合并所有文本块为一个段落
+    full_text = "".join(parser.remove_tag(t) for t in text_blocks)
+
+    print("📄 全部文本内容：")
+    print(full_text)
+
+    # print(f"\n📊 表格或图像数量：{len(tables_and_figures)}")
+    # output_dir = "output_images"
+    # os.makedirs(output_dir, exist_ok=True)
+    # for idx, (img, _) in enumerate(tables_and_figures):
+    #     img_path = os.path.join(output_dir, f"table_or_fig_{idx + 1}.png")
+    #     img.save(img_path)
+    #     print(f"✅ 已保存图像：{img_path}")

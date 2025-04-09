@@ -23,7 +23,7 @@ import cv2
 import numpy as np
 from huggingface_hub import snapshot_download
 
-from deepdoc.vision import Recognizer
+from deepdoc.vision.recognizer import Recognizer
 from deepdoc.vision.operators import nms
 
 
@@ -31,13 +31,13 @@ def get_default_resource_dir():
     """
     Return the default resource directory path, assuming this file is in:
     project_root/some/module/path/tokenizer.py
-    Then the resource dir is: project_root/rag/res/huqie
+    Then the resource dir is: project_root/resources/data_parser/qieci
     If the directory does not exist, it will be created automatically.
     """
     resource_dir = os.path.abspath(
-        os.path.join(os.path.dirname(__file__), "../../rag/res/huqie")
+        os.path.join(os.path.dirname(__file__), "../../resources/data_parser/qieci")
     )
-    os.makedirs(resource_dir, exist_ok=True)
+    return resource_dir
 
 
 class LayoutRecognizer(Recognizer):

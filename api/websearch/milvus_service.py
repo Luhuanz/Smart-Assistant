@@ -8,10 +8,8 @@ from pymilvus import (
     connections, FieldSchema, CollectionSchema,
     DataType, Collection, utility
 )
-from sentence_transformers import CrossEncoder
 from configs.settings import *
-
-from src.models.reranker import RerankerWrapper
+from src.models.reranker_model import *
 
 
 class MilvusService:
@@ -25,14 +23,12 @@ class MilvusService:
             openai_base_url: str = MODEL_API_BASE,
             openai_api_key: str = MODEL_API_KEY,
             embedding_model: str = EMBEDDING_MODEL,
-            model_path: str = MODEL_RERANKER_PATH,
-            reranker_key: str = "local/bge-reranker-v2-m3",
-            reranker_local_path: str = "/data/meet-Pok-mon-chat/resources/models/bge-reranker-v2-m3",
-            reranker_model: str = 'bge-reranker-v2-m3',
+            reranker_key: str = "siliconflow/bge-reranker-v2-m3",
+            reranker_local_path: str = "/data/Langagent/resources/models/bge-reranker-v2-m3",
+            reranker_model: str = 'BAAI/bge-reranker-v2-m3',
     ):
         """
         初始化 Milvus 向量存储
-        
         参数:
             collection_name: 集合名称
             dim: 向量维度
@@ -54,12 +50,11 @@ class MilvusService:
             openai_api_key=openai_api_key,
             chunk_size=32
         )
-        # self.model = CrossEncoder(model_path, device="cuda")
         self.reranker = RerankerWrapper(
             reranker_key=reranker_key,
             model_name=reranker_model,
             local_path=reranker_local_path,
-            device="cuda"
+            device="cpu"
         )
         # 定义集合结构
         self.fields = [
@@ -129,12 +124,10 @@ class MilvusService:
 
         for i in range(0, total_docs, batch_size):
             batch_docs = documents[i:i + batch_size]
-
             # 生成嵌入
             texts = [doc.page_content for doc in batch_docs]
             embeddings = self.embedder.embed_documents(texts)
             text_length = [len(doc.page_content) for doc in batch_docs]
-
             # 准备数据
             metadatas = [doc.metadata for doc in batch_docs]
 
@@ -176,7 +169,7 @@ class MilvusService:
             **search_kwargs
         }
 
-        # 执行搜索（在数据库层过滤）
+        # 执行搜索
         search_result = self.collection.search(
             data=[query_embedding],
             anns_field="embedding",
@@ -206,29 +199,8 @@ class MilvusService:
         # 如果没有启用rerank，直接返回前k个结果
         if not rerank or len(candidates) <= k:
             return candidates[:k]
-
         # 执行rerank
         return self.rerank_documents(query, candidates, k)
-
-    # def rerank_documents(
-    #         self,
-    #         query: str,
-    #         candidates: List[Document],
-    #         k: int,
-    # ) -> List[Document]:
-    #     print("🎯 正在调用 reranker 对候选文档重新排序...")
-    #     pairs = [(query, doc.page_content) for doc in candidates]
-    #
-    #     # 批量计算相关性分数
-    #     scores = self.model.predict(pairs, batch_size=32)
-    #
-    #     # 关联分数到文档
-    #     for doc, score in zip(candidates, scores):
-    #         doc.metadata["rerank_score"] = float(score)
-    #
-    #     # 按分数降序排序
-    #     candidates.sort(key=lambda x: x.metadata["rerank_score"], reverse=True)
-    #     return candidates[:k]
 
     def rerank_documents(self, query: str, candidates: List[Document], k: int) -> List[Document]:
         print("🎯 正在调用 reranker 对候选文档重新排序...")

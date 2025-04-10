@@ -22,7 +22,7 @@ class OpenAIBase:
         self.api_key = api_key
         self.base_url = base_url
         self.model_name = model_name
-        # 创建 OpenAI 客户端实例
+        # 创建OpenAI客户端实例
         self.client = OpenAI(api_key=api_key, base_url=base_url)
         _log.debug(f"Models: {self.get_models()}")
 

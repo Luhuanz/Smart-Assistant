@@ -1,3 +1,3 @@
 from .history_chat import *
 from .indexing import *
-from .Milvus import *
+from .milvus import *

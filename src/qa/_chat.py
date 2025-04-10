@@ -12,13 +12,13 @@ from langgraph.checkpoint.memory import MemorySaver
 from langgraph.graph import StateGraph, MessagesState, START, END
 
 # 设置项目路径
-project_root = Path(__file__).parent.parent.resolve()  # 假设文件在项目子目录中
+project_root = Path(__file__).parent.parent.resolve()
 sys.path.insert(0, str(project_root))
 
 # 本地模块导入
-from kg_agent import KGQueryAgent
+from agent.kg_agent import KGQueryAgent
 from rag import GraphRAG
-from api.websearch import TavilyBasicSearcher, LiteWebSearcher
+from api.websearch.LiteWebSearcher import WebSearcher
 
 
 # 辅助类
@@ -204,7 +204,6 @@ if __name__ == "__main__":
     async def main():
         # 初始化代理
         agent = PokemonKGChatAgent()
-
         # 示例查询
         question = "拥有皮卡丘的角色中，有哪些是小刚的伙伴？"
 

@@ -11,7 +11,7 @@ from configs.settings import *
 class WebSearcher:
     def __init__(
             self,
-            milvus_collection: str = "test",
+            milvus_collection: str = "test1",
             embedding_model: str = EMBEDDING_MODEL,
             search_top_k: int = 10,
             rerank_top_k: int = 5,
@@ -53,11 +53,12 @@ class WebSearcher:
                 input_variables=["question"]
             )
         }
-        self.llm = ChatOpenAI(
-            model=llm,
-            base_url=openai_base_url,
-            api_key=openai_api_key
-        )
+        # self.llm = ChatOpenAI(
+        #     model=llm,
+        #     base_url=openai_base_url,
+        #     api_key=openai_api_key
+        # )
+        self.llm = None
 
     async def search(self, query: str) -> Dict[str, str]:
         """
@@ -140,6 +141,8 @@ class WebSearcher:
                 question=query,
                 context=search_result["context"]
             )
+        else:
+            return search_result["context"]
         return answer.content
 
 
@@ -151,7 +154,7 @@ if __name__ == "__main__":
         # 示例用法
         searcher = WebSearcher()
         # 测试查询
-        query = "苏州今天天气怎么样？"
+        query = "李白什么时候出生的？？"
         print(f"正在执行搜索查询: {query}")
         result = await searcher.search_and_generate(query)
         # print("\n=== 搜索结果 ===")

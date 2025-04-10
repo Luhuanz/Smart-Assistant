@@ -1,15 +1,14 @@
 import warnings
 
 warnings.filterwarnings("ignore", category=FutureWarning)
-
+import numpy as np
+import torch
 from typing import List, Optional
 from langchain.schema import Document
 from pymilvus import (
     connections, FieldSchema, CollectionSchema,
     DataType, Collection, utility
 )
-from langchain_openai import OpenAIEmbeddings
-from configs.settings import *
 
 
 class MilvusStorage:
@@ -19,21 +18,17 @@ class MilvusStorage:
             dim: int = 1024,
             host: str = "localhost",
             port: str = "19530",
-            overwrite: bool = False,
-            openai_base_url: str = MODEL_API_BASE,
-            openai_api_key: str = MODEL_API_KEY,
-            embedding_model: str = EMBEDDING_MODEL,
+            overwrite: bool = False
     ):
+        """
+        一个轻量封装:
+        - 只负责把带有 embedding 的 Document 存进 Milvus
+        - 不做 embedding
+        """
         self.collection_name = collection_name
         self.dim = dim
-        self.embedder = OpenAIEmbeddings(
-            model=embedding_model,
-            openai_api_base=openai_base_url,
-            openai_api_key=openai_api_key,
-            chunk_size=32
-        )
 
-        connections.connect(host=host, port=port)
+        connections.connect(alias="default", host=host, port=port)
 
         self.fields = [
             FieldSchema(name="pk", dtype=DataType.INT64, is_primary=True, auto_id=True),
@@ -52,7 +47,7 @@ class MilvusStorage:
         if utility.has_collection(collection_name):
             if overwrite:
                 utility.drop_collection(collection_name)
-                print(f"已覆盖现有集合: {collection_name}")
+                print(f"已覆盖并删除原有集合: {collection_name}")
                 self.collection = self._create_collection()
             else:
                 self.collection = Collection(collection_name)
@@ -84,21 +79,56 @@ class MilvusStorage:
         self.collection.load()
 
     def insert(self, documents: List[Document], batch_size: int = 32):
-        print(f"开始插入 {len(documents)} 个文档")
-        for i in range(0, len(documents), batch_size):
-            batch = documents[i:i + batch_size]
-            texts = [doc.page_content for doc in batch]
-            embeddings = self.embedder.embed_documents(texts)
-            metadata = [doc.metadata for doc in batch]
-            text_lengths = [len(doc.page_content) for doc in batch]
+        """
+        注意：要求 doc.metadata["embedding"] 已经存在且维度 == self.dim
+        """
+        total_docs = len(documents)
+        print(f"开始插入 {total_docs} 个文档...")
 
-            entities = [texts, embeddings, metadata, text_lengths]
+        inserted = 0
+        for i in range(0, total_docs, batch_size):
+            batch = documents[i:i + batch_size]
+            texts = []
+            embeddings = []
+            metas = []
+            lengths = []
+
+            for doc in batch:
+                emb = doc.metadata.get("embedding", None)
+                if emb is None:
+                    raise ValueError("Document缺少embedding")
+                if isinstance(emb, (np.ndarray, torch.Tensor)):
+                    emb = emb.tolist()
+                if len(emb) != self.dim:
+                    raise ValueError(f"embedding长度({len(emb)})与定义的维度({self.dim})不匹配!")
+
+                clean_meta = dict(doc.metadata)
+                clean_meta.pop("embedding", None)
+
+                texts.append(doc.page_content)
+                embeddings.append(emb)
+                metas.append(clean_meta)
+                lengths.append(len(doc.page_content))
+
+                texts.append(doc.page_content)
+                embeddings.append(emb)
+                metas.append(doc.metadata)
+                lengths.append(len(doc.page_content))
+
+            entities = [
+                texts,  # text
+                embeddings,  # embedding
+                metas,  # metadata
+                lengths,  # text_length
+            ]
             self.collection.insert(entities)
-            print(f"已插入 {min(i + batch_size, len(documents))}/{len(documents)}")
+            inserted += len(batch)
+            print(f"已插入 {inserted}/{total_docs} 条...")
 
         self.collection.flush()
-        print(f"插入完成，总计 {self.collection.num_entities} 条数据")
+        print(f"插入完成, {self.collection.num_entities} 条数据在集合 {self.collection_name} 中.")
 
     def close(self):
-        connections.disconnect()
+        # Milvus官方SDK: 指定alias (默认 "default")
+        connections.disconnect(alias="default")
         print("Milvus 连接已关闭")

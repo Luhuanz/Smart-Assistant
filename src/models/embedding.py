@@ -169,16 +169,23 @@ class OtherEmbedding(BaseEmbeddingModel):
 
 
 def get_embedding_model(config) -> Union[BaseEmbeddingModel, None]:
+    if isinstance(config, dict):
+        class ConfigObject:
+            def __init__(self, config_dict):
+                for k, v in config_dict.items():
+                    setattr(self, k, v)
+
+        config = ConfigObject(config)
     if not getattr(config, "enable_knowledge_base", False):
         return None
-
     _log.debug(f"Loading embedding model: {config.embed_model}")
     provider, _ = config.embed_model.split('/', 1)
+
     if provider.lower() == "local":
         return LocalEmbeddingModel(config)
     elif provider.lower() == "ollama":
         return OllamaEmbedding(config)
-    elif provider == "openai":
+    elif provider.lower() == "openai":
         return OpenAIEmbedding(config)
     else:
         return OtherEmbedding(config)
@@ -191,7 +198,7 @@ if __name__ == "__main__":
         # 指定 embedding 模型，格式为 "provider/bge-large-zh-v1.5"，此处选择本地模型
         # embed_model = "local/bge-large-zh-v1.5"
         # embed_model = "ollama/bge-m3:latest"
-        embed_model_path = "openai/bge-m3-pro"
+        embed_model = "openai/bge-m3-pro"
 
 
     # 创建配置实例

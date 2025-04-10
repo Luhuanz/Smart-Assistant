@@ -109,13 +109,12 @@ def get_default_resource_dir():
     """
     Return the default resource directory path, assuming this file is in:
     project_root/some/module/path/tokenizer.py
-    Then the resource dir is: project_root/rag/res/huqie
+    Then the resource dir is: project_root/resources/data_parser/qieci
     If the directory does not exist, it will be created automatically.
     """
     resource_dir = os.path.abspath(
-        os.path.join(os.path.dirname(__file__), "../../rag/res/huqie")
+        os.path.join(os.path.dirname(__file__), "../../resources/data_parser/qieci")
     )
-    os.makedirs(resource_dir, exist_ok=True)  # 自动创建目录（如果不存在）
     return resource_dir
 
 

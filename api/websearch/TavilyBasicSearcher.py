@@ -248,7 +248,7 @@ if __name__ == '__main__':
             openai_api_key=MODEL_API_KEY,
             openai_base_url=MODEL_API_BASE
         )
-        query_str = "苏州今天天气怎么样？"
+        query_str = "李白什么时候出生的？？"
         logger.info(f"正在执行搜索查询: {query_str}")
         answer = await searcher_llm.search_and_generate(query_str, max_results=3, search_depth="basic")
         print("===== 模型回复 =====")

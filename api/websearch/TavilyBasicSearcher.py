@@ -159,7 +159,7 @@ class IndustrialWebSearcher:
 
 class IndustrialWebSearcherLLM:
     """
-    将 IndustrialWebSearcher 与 LLM 整合，根据搜索结果生成回答。
+    将 IndustrialWebSearcher与 LLM整合，根据搜索结果生成回答。
     加入 MilvusService 后，会利用向量搜索对搜索结果进行去重和重排序。
     """
 
@@ -242,13 +242,13 @@ if __name__ == '__main__':
         searcher_llm = IndustrialWebSearcherLLM(
             api_key=TAVILY_API_KEY,
             cache_ttl_minutes=10,
-            milvus_collection="test",
+            milvus_collection="test2",
             rag_top_k=3,
             llm_model=MODEL_NAME,
             openai_api_key=MODEL_API_KEY,
             openai_base_url=MODEL_API_BASE
         )
-        query_str = "李白什么时候出生的？？"
+        query_str = "皮卡丘进化是什么？"
         logger.info(f"正在执行搜索查询: {query_str}")
         answer = await searcher_llm.search_and_generate(query_str, max_results=3, search_depth="basic")
         print("===== 模型回复 =====")

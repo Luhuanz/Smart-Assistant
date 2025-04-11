@@ -37,3 +37,10 @@ tavily-python
 FlagEmbedding
 peft
 dashscope
+pymysql
+sqlalchemy
+requests
+pydantic
+langchain_ollama
+faker
+langchain_experimental

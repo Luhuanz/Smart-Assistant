@@ -1,5 +1,3 @@
-# weather_agent.py
-
 from sqlalchemy import create_engine, Column, Integer, String, Float
 from sqlalchemy.orm import sessionmaker, declarative_base
 from langchain_core.tools import tool
@@ -86,8 +84,6 @@ def get_weather(location):
         "lang": "zh_cn"
     }
     response = requests.get(url, params=params)
-    # print(f"[调试] 请求状态码: {response.status_code}")
-    # print(f"[调试] 返回内容: {response.text}")
     data = response.json()
     return json.dumps(data)
 
@@ -120,7 +116,6 @@ def insert_weather_to_db(city_id, city_name, main_weather, description, temperat
             )
             session.add(weather)
             msg = "天气数据已成功插入数据库。"
-
         session.commit()
         return {"messages": [msg]}
     except Exception as e:
@@ -165,103 +160,105 @@ def delete_weather_from_db(city_name: str):
         session.close()
 
 
-# ---------- Graph 逻辑 ----------
-tools = [get_weather, insert_weather_to_db, query_weather_from_db, delete_weather_from_db]
-tool_node = ToolNode(tools)
+class WeatherAgent:
+    def __init__(self):
+        self.tools = [get_weather, insert_weather_to_db, query_weather_from_db, delete_weather_from_db]
+        self.tool_node = ToolNode(self.tools)
+        self.llm = ChatOpenAI(
+            model="gpt-4o",
+            api_key="hk-uomxwi1000053684154a700e0b331d4846fa5bf6fb77ddaf",
+            base_url="https://api.openai-hk.com/v1",
+            temperature=0
+        ).bind_tools(self.tools)
+        self.graph = self._build_workflow()
 
-key = "hk-uomxwi1000053684154a700e0b331d4846fa5bf6fb77ddaf"
-base_url = "https://api.openai-hk.com/v1"
-llm = ChatOpenAI(model="gpt-4o", api_key=key, base_url=base_url, temperature=0).bind_tools(tools)
+    def _call_model(self, state):
+        messages = state["messages"]
+        # print("[调试] LLM 接收到的消息:", messages)
+        response = self.llm.invoke(messages)
+        return {"messages": [response]}
 
+    def _should_continue(self, state):
+        last_msg = state["messages"][-1]
+        if not last_msg.tool_calls:
+            return "end"
+        elif last_msg.tool_calls[0]["name"] == "delete_weather_from_db":
+            return "run_tool"
+        else:
+            return "continue"
 
-def call_model(state):
-    messages = state["messages"]
-    response = llm.invoke(messages)
-    return {"messages": [response]}
+    def _run_tool(self, state):
+        new_messages = []
+        tool_calls = state["messages"][-1].tool_calls
+        tool_map = {t.name: t for t in self.tools}
 
+        for call in tool_calls:
+            tool = tool_map.get(call["name"])
+            if tool:
+                result = tool.invoke(call["args"])
+                new_messages.append({
+                    "role": "tool",
+                    "name": call["name"],
+                    "content": result,
+                    "tool_call_id": call["id"]
+                })
+        return {"messages": new_messages}
 
-def should_continue(state):
-    last_msg = state["messages"][-1]
-    if not last_msg.tool_calls:
-        return "end"
-    elif last_msg.tool_calls[0]["name"] == "delete_weather_from_db":
-        return "run_tool"
-    else:
-        return "continue"
+    def _build_workflow(self):
+        workflow = StateGraph(MessagesState)
+        workflow.add_node("agent", self._call_model)
+        workflow.add_node("action", self.tool_node)
+        workflow.add_node("run_tool", self._run_tool)
+        workflow.add_edge(START, "agent")
+        workflow.add_conditional_edges("agent", self._should_continue, {
+            "continue": "action",
+            "run_tool": "run_tool",
+            "end": END,
+        })
+        workflow.add_edge("action", "agent")
+        workflow.add_edge("run_tool", "agent")
+        return workflow.compile(checkpointer=MemorySaver(), interrupt_before=["run_tool"])
 
-
-def run_tool(state):
-    new_messages = []
-    tool_calls = state["messages"][-1].tool_calls
-    tool_map = {t.name: t for t in [delete_weather_from_db]}
-
-    for call in tool_calls:
-        tool = tool_map.get(call["name"])
-        if tool:
-            result = tool.invoke(call["args"])
-            new_messages.append({
-                "role": "tool",
-                "name": call["name"],
-                "content": result,
-                "tool_call_id": call["id"]
-            })
-    return {"messages": new_messages}
-
-
-# ---------- 构建 workflow ----------
-def build_workflow():
-    workflow = StateGraph(MessagesState)
-    workflow.add_node("agent", call_model)
-    workflow.add_node("action", tool_node)
-    workflow.add_node("run_tool", run_tool)
-    workflow.add_edge(START, "agent")
-
-    workflow.add_conditional_edges("agent", should_continue, {
-        "continue": "action",
-        "run_tool": "run_tool",
-        "end": END,
-    })
-
-    workflow.add_edge("action", "agent")
-    workflow.add_edge("run_tool", "agent")
-    return workflow.compile(checkpointer=MemorySaver(), interrupt_before=["run_tool"])
-
-
-# ---------- CLI 主入口 ----------
-def run_chat_loop():
-    config = {"configurable": {"thread_id": "session_1"}}
-    graph = build_workflow()
-
-    while True:
-        user_input = input("请输入问题，输入'退出'结束：")
-        if user_input.lower() == '退出':
-            break
-
-        for chunk in graph.stream({"messages": user_input}, config, stream_mode="values"):
-            state = graph.get_state(config)
-
+    def ask(self, question: str) -> str:
+        config = {"configurable": {"thread_id": "session_1"}}
+        user_message = {"role": "user", "content": question}
+        for chunk in self.graph.stream({"messages": [user_message]}, config, stream_mode="values"):
+            state = self.graph.get_state(config)
             if not state.tasks:
-                print("AI：", chunk["messages"][-1].content)
-                break
+                return chunk["messages"][-1].content
 
-            if state.tasks[0].name == "run_tool":
-                user_input = input("是否允许执行删除操作？(是/否): ")
-                if user_input == "是":
-                    graph.update_state(config=config, values=chunk)
-                    for event in graph.stream(None, config, stream_mode="values"):
-                        print("AI：", event["messages"][-1].content)
-                else:
-                    tool_call_id = state.values["messages"][-1].tool_calls[0]["id"]
-                    new_message = {
-                        "role": "tool",
-                        "name": "delete_weather_from_db",
-                        "content": "管理员不允许删除操作！",
-                        "tool_call_id": tool_call_id
-                    }
-                    graph.update_state(config, {"messages": [new_message]}, as_node="run_tool")
-                    for event in graph.stream(None, config, stream_mode="values"):
-                        print("AI：", event["messages"][-1].content)
+    def chat_loop(self):
+        config = {"configurable": {"thread_id": "session_1"}}
+        print("欢迎使用天气对话助手，输入'退出'结束对话")
+        while True:
+            user_input = input("你：")
+            if user_input.lower() == "退出":
+                break
+            user_message = {"role": "user", "content": user_input}
+            for chunk in self.graph.stream({"messages": [user_message]}, config, stream_mode="values"):
+                state = self.graph.get_state(config)
+                if not state.tasks:
+                    # print("AI：", chunk["messages"][-1].content)
+                    break
+                if state.tasks[0].name == "run_tool":
+                    confirm = input("是否允许执行删除操作？(是/否): ")
+                    if confirm == "是":
+                        self.graph.update_state(config=config, values=chunk)
+                        for event in self.graph.stream(None, config, stream_mode="values"):
+                            print("AI：", event["messages"][-1].content)
+                    else:
+                        tool_call_id = state.values["messages"][-1].tool_calls[0]["id"]
+                        new_message = {
+                            "role": "tool",
+                            "name": "delete_weather_from_db",
+                            "content": "管理员不允许删除操作！",
+                            "tool_call_id": tool_call_id
+                        }
+                        self.graph.update_state(config, {"messages": [new_message]}, as_node="run_tool")
+                        for event in self.graph.stream(None, config, stream_mode="values"):
+                            print("AI：", event["messages"][-1].content)
 
 
 if __name__ == "__main__":
-    run_chat_loop()
+    agent = WeatherAgent()
+    agent.chat_loop()

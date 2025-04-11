@@ -1,3 +1,6 @@
+import warnings
+
+warnings.filterwarnings("ignore")
 import os
 import pickle
 import sys
@@ -24,20 +27,26 @@ from src.ner.ner_model import *
 
 # Neo4j 连接配置
 NEO4J_URI = "bolt://localhost:7687"
-NEO4J_AUTH = ("neo4j", "tczaslw278")  # 替换为实际认证信息
+NEO4J_AUTH = ("neo4j", "tczslw278")  # 替换为实际认证信息
 g = Graph(NEO4J_URI, auth=NEO4J_AUTH)
 
 
-class EntityRecognition:
-    def __init__(self):
-        # 初始化规则和 TF-IDF 对齐
+class EntityRecognitionSingleton:
+    _instance = None
+
+    def __new__(cls):
+        if cls._instance is None:
+            cls._instance = super(EntityRecognitionSingleton, cls).__new__(cls)
+            cls._instance._initialize()
+        return cls._instance
+
+    def _initialize(self):
         self.rule = rule_find()
         self.tfidf_r = tfidf_alignment()
         self.base_dir = BASE_DIR
         self.model_name = MODEL_ROBERTA_PATH
         self.pt_path = CACHE_BERTA_MODEL
 
-        # 加载 tag2idx
         if os.path.exists(r'../resources/data/ner_data/tag2idx.npy'):
             with open(r'../resources/data/ner_data/tag2idx.npy', 'rb') as f:
                 self.tag2idx = pickle.load(f)
@@ -45,31 +54,25 @@ class EntityRecognition:
         else:
             raise FileNotFoundError("tag2idx文件不存在！")
 
-        # 初始化设备
         self.device = torch.device('cuda:0') if torch.cuda.is_available() else torch.device('cpu')
 
-        # 加载 tokenizer
         self.tokenizer = BertTokenizer.from_pretrained(self.model_name, cache_dir=MODEL_ROBERTA_PATH)
 
-        # 初始化模型
         hidden_size = 128
         bi = True
         self.model = Bert_Model(self.model_name, hidden_size, len(self.tag2idx), bi)
 
-        # 加载模型权重
         if os.path.exists(self.pt_path):
             print("加载已有模型")
             self.model.load_state_dict(torch.load(self.pt_path, map_location=self.device))
         else:
             raise FileNotFoundError("未找到模型权重文件!!")
 
-        # 将模型移动到设备
         self.model = self.model.to(self.device)
 
         print('模型初始化完成 ......')
 
     def ner(self, question):
-        # 调用 NER 方法
         return get_ner_result(self.model, self.tokenizer, question, self.rule, self.tfidf_r, self.device, self.idx2tag)
 
 
@@ -82,7 +85,7 @@ class KGQueryAgent:
         :param llm: 可选的语言模型实例，默认使用ChatOpenAI
         """
         self.llm = llm or self._default_llm()
-        self.ner = EntityRecognition()
+        self.ner = EntityRecognitionSingleton()
         self.tools = self._init_tools()
         self.agent = self._create_agent()
 
@@ -408,5 +411,5 @@ if __name__ == "__main__":
     agent = KGQueryAgent()
 
     # 示例查询
-    result = agent.query("拥有皮卡丘的角色中，有哪些是赤红的伙伴？")
+    result = agent.query("小火龙哪些地方可以抓到？")
     print(result)

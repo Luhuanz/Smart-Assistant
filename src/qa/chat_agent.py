@@ -10,6 +10,7 @@ from langchain_core.runnables import RunnableLambda
 from langchain_openai import ChatOpenAI
 from langgraph.checkpoint.memory import MemorySaver
 from langgraph.graph import StateGraph, MessagesState, START, END
+from configs.settings import *
 
 # 设置项目路径
 project_root = Path(__file__).parent.parent.resolve()
@@ -18,7 +19,8 @@ sys.path.insert(0, str(project_root))
 # 本地模块导入
 from agent.kg_agent import KGQueryAgent
 from rag import GraphRAG
-from api.websearch.LiteWebSearcher import WebSearcher
+# from api.websearch.LiteWebSearcher import WebSearcher
+from api.websearch.websearcher import LiteWebSearcher
 
 
 # 辅助类
@@ -70,18 +72,18 @@ class PokemonKGChatAgent:
         # 初始化LLM
         self.llm = ChatOpenAI(**self.config["llm_config"])
 
-        # 初始化知识图谱查询代理
+        # 初始化知识图谱查询代理 1
         self.kgsql_agent = KGQueryAgent(llm=self.llm)
 
-        # 初始化图RAG
+        # 初始化图RAG 1
         self.graph_rag = GraphRAG(
             artifacts_path=self.config["graph_rag_config"]["artifacts_path"],
             llm_config=self.config["graph_rag_config"]["llm_config"],
             community_level=self.config["graph_rag_config"]["community_level"]
         )
 
-        # 初始化网络搜索器
-        self.searcher = WebSearcher()
+        # 初始化网络搜索器 0
+        self.searcher = LiteWebSearcher()
 
     def _build_graph(self):
         """构建LangGraph状态图"""

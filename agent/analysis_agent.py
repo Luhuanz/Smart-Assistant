@@ -57,12 +57,10 @@ class CompetitorAnalysis(Base):
 
 
 # ----- 初始化数据库 -----
-DATABASE_URI = "mysql+pymysql://gpt:gpt@localhost/langgraph?charset=utf8mb4"
+DATABASE_URI = 'mysql+pymysql://gpt:gpt@localhost:3307/langgraph?charset=utf8mb4'
 engine = create_engine(DATABASE_URI)
 Base.metadata.create_all(engine)
 Session = sessionmaker(bind=engine)
-
-# 也可以加一些 fake 数据插入逻辑
 
 # ----- 工具定义 (增删改查) -----
 from pydantic import BaseModel, Field
@@ -219,27 +217,27 @@ def create_agent(llm, tools, system_message: str):
 
 # 1) 数据库管理员代理
 def create_db_agent():
-    key = "你的_GPT4o_API_Key"
+    key = "hk-uomxwi1000053684154a700e0b331d4846fa5bf6fb77ddaf"
     base_url = "https://api.openai-hk.com/v1"
     db_llm = ChatOpenAI(model="gpt-4o", api_key=key, base_url=base_url, temperature=0)
     db_tools = [add_sale, delete_sale, update_sale, query_sales]
-    # 创建提示
+
     db_prompt = create_agent(db_llm, db_tools, "You should provide accurate data for the code_generator to use.")
-    # 绑定工具
-    db_agent = db_llm.bind_tools(db_tools, db_prompt)
+
+    db_agent = db_prompt | db_llm.bind_tools(db_tools)
     return db_agent
 
 
-# 2) 代码生成 / 分析代理
+# 2) 代码生成/分析代理
 def create_code_agent():
     coder_llm = ChatOllama(
-        base_url="http://localhost:11434",  # 你的 Ollama 服务地址
+        base_url="http://localhost:11434",
         model="qwen2.5-coder:32b",
     )
     code_tools = [python_repl]
     code_prompt = create_agent(coder_llm, code_tools,
                                "Run python code to display diagrams or output execution results.")
-    code_agent = coder_llm.bind_tools(code_tools, code_prompt)
+    code_agent = code_prompt | coder_llm.bind_tools(code_tools)
     return code_agent
 
 
@@ -315,12 +313,13 @@ class DataAnalysisAgent:
 
     def ask(self, user_input: str):
         """单轮问答：将 user_input 发送给图，直到出现 FINAL ANSWER 或无任务."""
+        config = {"configurable": {"thread_id": "session_1"}}
         payload = {
             "messages": [HumanMessage(content=user_input)],
             "sender": "user",
         }
-        for chunk in self.graph.stream(payload, {}, stream_mode="values"):
-            if not self.graph.get_state({}).tasks:  # 没有下一个节点了
+        for chunk in self.graph.stream(payload, config, stream_mode="values"):
+            if not self.graph.get_state(config).tasks:
                 return chunk["messages"][-1].content
 
     def chat_loop(self):

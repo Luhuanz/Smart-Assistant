@@ -64,9 +64,12 @@ class RAGFlowExcelParser:
 
     @staticmethod
     def _load_excel_to_workbook(file_like_object):
-        if isinstance(file_like_object, bytes):
-            file_like_object = BytesIO(file_like_object)
+        if isinstance(file_like_object, str):
+            with open(file_like_object, 'rb') as f:
+                file_like_object = BytesIO(f.read())
 
+        elif isinstance(file_like_object, bytes):
+            file_like_object = BytesIO(file_like_object)
         # Read first 4 bytes to determine file type
         file_like_object.seek(0)
         file_head = file_like_object.read(4)
@@ -185,7 +188,7 @@ class RAGFlowExcelParser:
 
 
 if __name__ == "__main__":
-    filepath = "/data/Langagent/deepdoc/data/exmaple.xlsx"
+    filepath = "/data/Langagent/deepdoc/data/random_data.csv"
     parser = RAGFlowExcelParser()
 
     # 先把文件内容读进来（bytes）

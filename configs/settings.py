@@ -7,10 +7,10 @@ MODEL_RERANKER_PATH = os.path.join(BASE_DIR, 'resources', 'models', 'bge-reranke
 MODEL_ROBERTA_PATH = os.path.join(BASE_DIR, 'resources', 'models', 'chinese-roberta-wwm-ext')
 MODEL_EMBEDDING_PATH = os.path.join(BASE_DIR, 'resources', 'models', 'bge-large-zh-v1.5')
 MODEL_OCR_PATH = os.path.join(BASE_DIR, 'resources', 'models', 'ocr')
-CACHE_BERTA_MODEL = os.path.join(BASE_DIR, 'resources', 'cache', 'roberta', 'best_roberta')
+CACHE_BERTA_MODEL = os.path.join(BASE_DIR, 'resources', 'cache', 'roberta', 'best_roberta.pt')
 EMBEDDING_MODEL = 'bge-m3-pro'
 EMBEDDING_MODEL_DIM = 1024
-MODEL_BASE = r"/data/Langagent/resources/models/ocr"
+
 # api
 MODEL_API_KEY = 'sk-36oMlDApF5Nlg0v23014A4B69e864000944151Cd75D82076'
 MODEL_API_BASE = 'http://139.224.116.116:3000/v1'
@@ -46,5 +46,22 @@ EMBED_MODEL_INFO = {
         "dimension": 1024,
         "url": "http://localhost:11434/api/embed"
     },
+
+}
+
+# knowledage base
+CONFIG = {
+    # Milvus
+    "milvus_uri": "http://localhost:19530",
+    "default_distance_threshold": 0.5,
+    "default_rerank_threshold": 0.1,
+    "default_max_query_count": 20,
+    "default_top_k": 10,
+    "enable_knowledge_base": True,
+    "embed_model": "openai/bge-m3-pro",
+    "reranker_key": "siliconflow/bge-reranker-v2-m3",
+    "model_name": "BAAI/bge-reranker-v2-m3",
+    'enable_reranker': True,
+    'MODEL_RERANKER_PATH': MODEL_RERANKER_PATH
 
 }

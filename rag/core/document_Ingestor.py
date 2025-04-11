@@ -96,7 +96,7 @@ class DocumentIngestor:
 if __name__ == "__main__":
     # 示例配置
     milvus_config = {
-        "collection_name": "documents_collection",
+        "collection_name": "documents_collection1",
         "overwrite": True,
         "dim": 1024,
         "host": "localhost",
@@ -105,7 +105,7 @@ if __name__ == "__main__":
 
     embedding_config = {
         "enable_knowledge_base": True,
-        "embed_model": "local/bge-large-zh-v1.5"
+        "embed_model": "openai/bge-m3-pro"
     }
 
     ingestor = DocumentIngestor(
@@ -116,7 +116,7 @@ if __name__ == "__main__":
         ocr_enabled=True
     )
 
-    ingestor.ingest_single_file("/data/Langagent/resources/models/ocr/README.md")
+    ingestor.ingest_single_file("/data/Langagent/deepdoc/data/random_data.csv")
     # 或处理一个目录
     # ingestor.ingest_directory("/data/docs")
 

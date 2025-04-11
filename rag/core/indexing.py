@@ -57,7 +57,7 @@ def parse_file(
         with open(file_path, "r", encoding="utf-8") as f:
             return f.read()
 
-    elif ext in [".xls", ".xlsx"]:
+    elif ext in [".xls", ".xlsx", ".csv"]:
         _log.info(f"parse_file - Using ExcelParser for {file_path}")
         parser = ExcelParser()
         text_blocks = parser(file_path)

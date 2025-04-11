@@ -1,7 +1,11 @@
 from src import config, knowledge_base, graph_base
 from src.models.rerank_model import get_reranker
-from src.utils.logging_config import logger
+from src.utils.logger import LogManager
 from src.models import select_model
+from prompts import *
+
+_log = LogManager()
+
 
 class Retriever:
 
@@ -13,8 +17,8 @@ class Retriever:
             self.reranker = get_reranker(config)
 
         if config.enable_web_search:
-            from src.utils.web_search import WebSearcher
-            self.web_searcher = WebSearcher()
+            from api.websearch.websearcher import LiteWebSearcher, TavilyBasicSearcher
+            self.web_searcher = LiteWebSearcher()
 
     def retrieval(self, query, history, meta):
         refs = {"query": query, "history": history, "meta": meta}
@@ -31,7 +35,7 @@ class Retriever:
         self._load_models()
 
     def construct_query(self, query, refs, meta):
-        logger.debug(f"{refs=}")
+        _log.debug(f"{refs=}")
         if not refs or len(refs) == 0:
             return query
 
@@ -47,7 +51,8 @@ class Retriever:
         db_res = refs.get("graph_base", {}).get("results", {})
         if db_res.get("nodes") and len(db_res["nodes"]) > 0:
             db_text = "\n".join(
-                [f"{edge['source_name']}和{edge['target_name']}的关系是{edge['type']}" for edge in db_res.get("edges", [])]
+                [f"{edge['source_name']}和{edge['target_name']}的关系是{edge['type']}" for edge in
+                 db_res.get("edges", [])]
             )
             external_parts.extend(["图数据库信息:", db_text])
 
@@ -58,7 +63,6 @@ class Retriever:
             external_parts.extend(["网络搜索信息:", web_text])
 
         # 构造查询
-        from src.utils.prompts import knowbase_qa_template
         if external_parts and len(external_parts) > 0:
             external = "\n\n".join(external_parts)
             query = knowbase_qa_template.format(external=external, query=query)
@@ -81,7 +85,6 @@ class Retriever:
                     results.extend(result)
         return {"results": self.format_query_results(results)}
 
-
     def query_knowledgebase(self, query, history, refs):
         """查询知识库"""
 
@@ -101,7 +104,7 @@ class Retriever:
 
         rw_query = self.rewrite_query(query, history, refs)
 
-        logger.debug(f"{meta=}")
+        _log.debug(f"{meta=}")
         query_result = knowledge_base.query(query=rw_query,
                                             db_id=db_id,
                                             distance_threshold=meta.get("distanceThreshold", 0.5),
@@ -124,7 +127,7 @@ class Retriever:
         try:
             search_results = self.web_searcher.search(query, max_results=5)
         except Exception as e:
-            logger.error(f"Web search error: {str(e)}")
+            _log.error(f"Web search error: {str(e)}")
             return {"results": [], "message": "Web search error"}
 
         return {"results": search_results}
@@ -142,7 +145,6 @@ class Retriever:
         if rewrite_query_span == "off":
             rewritten_query = query
         else:
-            from src.utils.prompts import rewritten_query_prompt_template
 
             history_query = [entry["content"] for entry in history if entry["role"] == "user"] if history else ""
             rewritten_query_prompt = rewritten_query_prompt_template.format(history=history_query, query=query)
@@ -163,10 +165,7 @@ class Retriever:
 
         entities = []
         if refs["meta"].get("use_graph"):
-            from src.utils.prompts import entity_extraction_prompt_template as entity_template
-            from src.utils.prompts import keywords_prompt_template as entity_template
-
-            entity_extraction_prompt = entity_template.format(text=query)
+            entity_extraction_prompt = keywords_prompt_template.format(text=query)
             entities = model.predict(entity_extraction_prompt).content.split("<->")
             # entities = [entity for entity in entities if all(char.isalnum() or char in "汉字" for char in entity)]
 
@@ -252,7 +251,7 @@ class Retriever:
                     # 添加边
                     formatted_results["edges"].append(edge_info)
                 except Exception as e:
-                    logger.error(f"处理关系时出错: {e}, 关系: {relationship}")
+                    _log.error(f"处理关系时出错: {e}, 关系: {relationship}")
                     continue
 
         # 将节点字典转换为列表

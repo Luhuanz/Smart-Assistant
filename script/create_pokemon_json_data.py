@@ -96,7 +96,7 @@ class MedicalGraphFromJson:
             try:
                 self.g.run(query)
                 cnt += 1
-                print(f"{rel_type} {cnt}/{len(rels)}")  # 用普通的print显示进度
+                print(f"{rel_type} {cnt}/{len(rels)}")
             except Exception as e:
                 print(e)
         return

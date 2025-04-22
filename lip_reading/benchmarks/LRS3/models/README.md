@@ -1,0 +1,1 @@
+Put the `LRS3_V_WER19.1` folder in this directory.

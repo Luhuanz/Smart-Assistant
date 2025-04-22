@@ -1,0 +1,22 @@
+# config.yaml
+
+defaults:  
+  - _self_  
+  - override hydra/hydra_logging: disabled  
+  - override hydra/job_logging: disabled   #禁用 Hydra 自带的日志输出系统，避免你项目控制台被 Hydra 打印内容刷屏。
+hydra:  
+  output_subdir: null   #不自动创建输出子目录（默认 Hydra 会新建目录存运行日志和结果）。
+  run:  
+    dir: .
+config_filename: configs/LRS3_V_WER19.1.ini
+data_dir: null
+data_filename: null
+data_ext: ".mp4"
+landmarks_dir: null
+landmarks_filename: null
+landmarks_ext: ".pkl"
+labels_filename: nullr
+detector: retinaface
+dst_filename: null
+gpu_idx: 0
+output_subdir: null

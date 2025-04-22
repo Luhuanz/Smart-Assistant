@@ -19,13 +19,12 @@ sys.path.insert(0, str(project_root))
 # 本地模块导入
 from agent.kg_agent import KGQueryAgent
 from rag import GraphRAG
-# from api.websearch.LiteWebSearcher import WebSearcher
-from api.websearch.websearcher import LiteWebSearcher
+from api.websearch.LiteWebSearcher import WebSearcher
+from api.websearch.websearcher import *
 
 
 # 辅助类
 class AgentState(MessagesState):
-    """代理状态类"""
     next: str
 
 
@@ -83,7 +82,7 @@ class PokemonKGChatAgent:
         )
 
         # 初始化网络搜索器 0
-        self.searcher = LiteWebSearcher()
+        self.searcher = WebSearcher()
 
     def _build_graph(self):
         """构建LangGraph状态图"""

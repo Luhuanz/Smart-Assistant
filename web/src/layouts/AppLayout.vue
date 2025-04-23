@@ -1,5 +1,5 @@
 <script setup>
-import { ref, reactive, KeepAlive, onMounted, computed } from 'vue'
+import { reactive,onMounted, computed } from 'vue'
 import { RouterLink, RouterView, useRoute } from 'vue-router'
 import {
   MessageOutlined,
@@ -8,21 +8,12 @@ import {
   SettingFilled,
   BookOutlined,
   BookFilled,
-  GithubOutlined,
-  FolderOutlined,
-  FolderFilled,
-  GoldOutlined,
-  GoldFilled,
   ToolFilled,
   ToolOutlined,
   BugOutlined,
   ProjectFilled,
   ProjectOutlined,
-  StarFilled,
-  StarOutlined,
-  ExclamationCircleOutlined,
-  RobotOutlined,
-  RobotFilled,
+  RedoOutlined,
   ApiOutlined,
 } from '@ant-design/icons-vue'
 import { themeConfig } from '@/assets/theme'
@@ -38,9 +29,7 @@ const layoutSettings = reactive({
   useTopBar: false, // 是否使用顶栏
 })
 
-// Add state for GitHub stars
-const githubStars = ref(0)
-const isLoadingStars = ref(false)
+
 
 const getRemoteConfig = () => {
   configStore.refreshConfig()
@@ -53,27 +42,14 @@ const getRemoteDatabase = () => {
   databaseStore.refreshDatabase()
 }
 
-// Fetch GitHub stars count
-const fetchGithubStars = async () => {
-  try {
-    isLoadingStars.value = true
-    const response = await fetch('https://api.github.com/repos/xerrors/Yuxi-Know')
-    const data = await response.json()
-    githubStars.value = data.stargazers_count
-  } catch (error) {
-    console.error('Error fetching GitHub stars:', error)
-  } finally {
-    isLoadingStars.value = false
-  }
-}
 
 onMounted(() => {
   getRemoteConfig()
   getRemoteDatabase()
-  fetchGithubStars() // Fetch GitHub stars on mount
+
 })
 
-// 打印当前页面的路由信息，使用 vue3 的 setup composition API
+// 打印当前页面的路由信息，使用vue3的setup composition API
 const route = useRoute()
 console.log(route)
 
@@ -106,6 +82,12 @@ const mainList = [{
     path: '/tools',
     icon: ToolOutlined,
     activeIcon: ToolFilled,
+  },
+   {
+    name: 'MCP',
+    path: '/mcp',
+    icon: RedoOutlined, // 你可以换成其他图标
+    activeIcon: RedoOutlined,
   }
 ]
 </script>
@@ -153,27 +135,9 @@ const mainList = [{
           <component class="icon" :is="route.path.startsWith(item.path) ? item.activeIcon : item.icon" />
           <span class="text">{{item.name}}</span>
         </RouterLink>
-
-        <a-tooltip placement="right">
-          <template #title>后端疑似没有正常启动或者正在繁忙中，请刷新一下或者检查 docker logs api-dev</template>
-          <div class="nav-item warning" v-if="!configStore.config._config_items">
-            <component class="icon" :is="ExclamationCircleOutlined" />
-            <span class="text">警告</span>
-          </div>
-        </a-tooltip>
       </div>
       <div class="fill" style="flex-grow: 1;"></div>
-      <div class="github nav-item">
-        <a-tooltip placement="right">
-          <template #title>GitHub</template>
-          <a href="https://github.com/xerrors/Yuxi-Know" target="_blank" class="github-link">
-            <GithubOutlined class="icon" style="color: #222;"/>
-            <span v-if="githubStars > 0" class="github-stars">
-            <span class="star-count">{{ githubStars }}</span>
-            </span>
-          </a>
-        </a-tooltip>
-      </div>
+
       <div class="nav-item api-docs">
         <a-tooltip placement="right">
           <template #title>接口文档 {{ apiDocsUrl }}</template>

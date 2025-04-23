@@ -120,7 +120,7 @@ const mainList = [{
       <div class="logo circle">
         <router-link to="/">
           <img src="/avatar.jpg">
-          <span class="logo-text">语析</span>
+          <span class="logo-text">可萌</span>
         </router-link>
       </div>
       <div class="nav">

@@ -11,7 +11,7 @@
         </div>
 
         <div class="newchat nav-btn" @click="$emit('newconv')">
-          <PlusCircleOutlined /> <span class="text">新对话</span>
+          <PlusCircleOutlined /> <span class="text">新建会话</span>
         </div>
         <a-dropdown>
           <a class="model-select nav-btn" @click.prevent>
@@ -62,7 +62,7 @@
       </div>
     </div>
     <div v-if="conv.messages.length == 0" class="chat-examples">
-      <h1>你好，我是语析，一个基于知识图谱的智能助手</h1>
+      <h1>你好，我是可萌，一个基于宝可梦知识图谱的智能助手</h1>
       <div class="opts">
         <div
           class="opt__button"
@@ -143,30 +143,15 @@
 <script setup>
 import { reactive, ref, onMounted, toRefs, nextTick, onUnmounted, watch, computed } from 'vue'
 import {
-  SendOutlined,
-  MenuOutlined,
-  FormOutlined,
-  LoadingOutlined,
+
   BookOutlined,
-  BookFilled,
   CompassOutlined,
-  ArrowUpOutlined,
-  CompassFilled,
-  GoldenFilled,
-  GoldOutlined,
-  SettingOutlined,
-  SettingFilled,
   PlusCircleOutlined,
   FolderOutlined,
   FolderOpenOutlined,
-  GlobalOutlined,
-  FileTextOutlined,
   BulbOutlined,
-  CaretRightOutlined,
   DeploymentUnitOutlined,
-  PauseOutlined,
-  ReloadOutlined,
-  CopyOutlined
+
 } from '@ant-design/icons-vue'
 import { onClickOutside } from '@vueuse/core'
 import { useConfigStore } from '@/stores/config'
@@ -192,9 +177,9 @@ const shouldAutoScroll = ref(true);
 const panel = ref(null)
 const modelCard = ref(null)
 const examples = ref([
-  '写一个简单的冒泡排序',
-  '今天无锡天气怎么样？',
-  '介绍一下红楼梦',
+  '喜欢小智吗？',
+  '今天常州天气怎么样？',
+  '介绍一下皮卡丘',
   '今天星期几？'
 ])
 

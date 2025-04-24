@@ -3,6 +3,10 @@
     <div class="conversations" :class="{ 'is-open': state.isSidebarOpen }">
       <div class="actions">
         <!-- <div class="action new" @click="addNewConv"><FormOutlined /></div> -->
+            <div class="action new" @click="addNewConv" title="新建对话">
+      <!-- 使用 PlusCircleOutlined 比较直观 -->
+        <PlusCircleOutlined />
+            </div>
          <span class="header-title">对话历史</span>
         <div class="action close" @click="state.isSidebarOpen = false">
           <img src="@/assets/icons/sidebar_left.svg" class="iconfont icon-20" alt="设置" />
@@ -29,9 +33,9 @@
 
 <script setup>
 import { reactive, ref, watch, onMounted } from 'vue'
-import { DeleteOutlined, CommentOutlined } from '@ant-design/icons-vue'
-import ChatComponent from '@/components/ChatComponent.vue'
 
+import ChatComponent from '@/components/ChatComponent.vue'
+import { DeleteOutlined, CommentOutlined, PlusCircleOutlined } from '@ant-design/icons-vue'
 const convs = reactive(JSON.parse(localStorage.getItem('chat-convs')) || [
   {
     id: 0,
@@ -149,7 +153,10 @@ onMounted(() => {
     padding: 0;
     overflow: hidden;
   }
-
+ .action.new {
+  color: var(--main-500);
+  &:hover { background: var(--main-light-4); }
+}
   & .actions {
     height: var(--header-height);
     display: flex;

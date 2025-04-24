@@ -29,7 +29,7 @@
 
 <script setup>
 import { reactive, ref, watch, onMounted } from 'vue'
-import { FormOutlined, MenuOutlined, DeleteOutlined, CommentOutlined } from '@ant-design/icons-vue'
+import { DeleteOutlined, CommentOutlined } from '@ant-design/icons-vue'
 import ChatComponent from '@/components/ChatComponent.vue'
 
 const convs = reactive(JSON.parse(localStorage.getItem('chat-convs')) || [

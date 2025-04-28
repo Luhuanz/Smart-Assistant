@@ -1,5 +1,5 @@
-import { createRouter, createWebHistory } from 'vue-router'
-import AppLayout from '@/layouts/AppLayout.vue';
+import { createRouter, createWebHistory } from 'vue-router'  //：使用 HTML5 的 History 模式（地址栏没有 # 符号，比如 /chat 而不是 #/chat）。
+import AppLayout from '@/layouts/AppLayout.vue'; //这是项目的主布局（外壳）
 import BlankLayout from '@/layouts/BlankLayout.vue';
 
 const router = createRouter({
@@ -69,7 +69,7 @@ const router = createRouter({
       ]
     },
     {
-      path: '/database',
+      path: '/database', //知识库页面
       name: 'database',
       component: AppLayout,
       children: [
@@ -88,7 +88,7 @@ const router = createRouter({
       ]
     },
     {
-      path: '/setting',
+      path: '/setting', //设置页面
       name: 'setting',
       component: AppLayout,
       children: [
@@ -101,7 +101,7 @@ const router = createRouter({
       ]
     },
     {
-      path: '/tools',
+      path: '/tools', //工具页面
       name: 'tools',
       component: AppLayout,
       children: [

@@ -5,7 +5,7 @@
 
     <!-- 助手消息 -->
     <div v-else-if="message.role === 'assistant' || message.role === 'received'" class="assistant-message">
-      <!-- 推理过程 (ChatComponent特有) -->
+      <!-- 推理过程 (ChatComponent特有). 推理过程（reasoning） -->
       <p v-if="debugMode">
         {{ message.status }}
       </p>

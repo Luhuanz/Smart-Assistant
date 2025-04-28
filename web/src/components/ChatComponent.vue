@@ -1,6 +1,8 @@
 <template>
   <div class="chat"  ref="chatContainer">
+<!--     顶部左侧是打开侧边栏、新建会话、切换模型，右侧是打开选项设置面板。>-->
     <div class="chat-header">
+<!--      聊天界面顶部导航栏（新建对话、切换模型、选项面板）-->
       <div class="header__left">
         <div
           v-if="!state.isSidebarOpen"
@@ -10,30 +12,46 @@
           <img src="@/assets/icons/sidebar_left.svg" class="iconfont icon-20" alt="设置" />
         </div>
 
-        <div class="newchat nav-btn" @click="$emit('newconv')">
-          <PlusCircleOutlined /> <span class="text">新建会话</span>
-        </div>
-        <a-dropdown>
-          <a class="model-select nav-btn" @click.prevent>
-            <BulbOutlined /> <span class="text">{{ configStore.config?.model_provider }}/{{ configStore.config?.model_name }}</span>
-          </a>
-          <template #overlay>
-            <a-menu class="scrollable-menu">
-              <a-menu-item-group v-for="(item, key) in modelKeys" :key="key" :title="modelNames[item]?.name">
-                <a-menu-item v-for="(model, idx) in modelNames[item]?.models" :key="`${item}-${idx}`" @click="selectModel(item, model)">
-                  {{ item }}/{{ model }}
-                </a-menu-item>
-              </a-menu-item-group>
-              <a-menu-item-group v-if="customModels.length > 0" title="自定义模型">
-                <a-menu-item v-for="(model, idx) in customModels" :key="`custom-${idx}`" @click="selectModel('custom', model.custom_id)">
-                  custom/{{ model.custom_id }}
-                </a-menu-item>
-              </a-menu-item-group>
-            </a-menu>
-          </template>
-        </a-dropdown>
+         <div class="action-button" @click="$emit('newconv')">
+        <PlusCircleOutlined class="icon" />
+        <span class="text">新建会话</span>
+      </div>
+
+
       </div>
       <div class="header__right">
+         <a-dropdown>
+  <div class="model-select" @click.prevent>
+    <BulbOutlined class="icon" />
+    <span class="text">{{ configStore.config?.model_provider }}/{{ configStore.config?.model_name }}</span>
+  </div>
+  <template #overlay>
+    <a-menu class="scrollable-menu">
+      <a-menu-item-group
+        v-for="(item, key) in modelKeys"
+        :key="key"
+        :title="modelNames[item]?.name"
+      >
+        <a-menu-item
+          v-for="(model, idx) in modelNames[item]?.models"
+          :key="`${item}-${idx}`"
+          @click="selectModel(item, model)"
+        >
+          {{ item }}/{{ model }}
+        </a-menu-item>
+      </a-menu-item-group>
+      <a-menu-item-group v-if="customModels.length > 0" title="自定义模型">
+        <a-menu-item
+          v-for="(model, idx) in customModels"
+          :key="`custom-${idx}`"
+          @click="selectModel('custom', model.custom_id)"
+        >
+          custom/{{ model.custom_id }}
+        </a-menu-item>
+      </a-menu-item-group>
+    </a-menu>
+  </template>
+</a-dropdown>
         <div class="nav-btn text" @click="opts.showPanel = !opts.showPanel">
           <component :is="opts.showPanel ? FolderOpenOutlined : FolderOutlined" /> <span class="text">选项</span>
         </div>
@@ -58,6 +76,7 @@
           <div class="flex-center" @click="meta.wideScreen = !meta.wideScreen">
             宽屏模式 <div @click.stop><a-switch v-model:checked="meta.wideScreen" /></div>
           </div>
+
         </div>
       </div>
     </div>
@@ -65,7 +84,6 @@
       <h1>你好，我是可萌，一个基于宝可梦知识图谱的智能助手</h1>
       <div class="opts">
         <div
-          class="opt__button"
           v-for="(exp, key) in examples"
           :key="key"
           @click="conv.inputText = exp"
@@ -201,6 +219,7 @@ const meta = reactive(JSON.parse(localStorage.getItem('meta')) || {
   db_id: null,
   fontSize: 'default',
   wideScreen: false,
+  themeMode: false    // 控制亮/暗色模式
 })
 
 
@@ -595,7 +614,16 @@ watch(
   },
   { deep: true }
 );
-
+watch(
+  () => meta.themeMode,
+  (isDark) => {
+    if (isDark) {
+      document.body.classList.add('dark-theme');
+    } else {
+      document.body.classList.remove('dark-theme');
+    }
+  }
+);
 // 处理发送或停止
 const handleSendOrStop = () => {
   if (isStreaming.value) {
@@ -879,7 +907,34 @@ const selectModel = (provider, name) => {
   cursor: pointer;
 }
 
+.action-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  font-size: 14px;
+  color: var(--text-color);
+  background-color: var(--gray-100);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
 
+  &:hover {
+    background-color: var(--gray-200);
+  }
+
+  .icon {
+    font-size: 16px;
+    width: 16px;
+    height: 16px;
+  }
+
+  .text {
+    font-size: 14px;
+    white-space: nowrap;
+  }
+}
 
 .chat::-webkit-scrollbar {
   position: absolute;
@@ -1043,6 +1098,39 @@ const selectModel = (provider, name) => {
     background: var(--gray-500);
   }
 }
+
+.model-select {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  background-color: var(--gray-100);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: background-color 0.2s ease;
+
+  &:hover {
+    background-color: var(--gray-200);
+  }
+
+  .icon {
+    font-size: 16px;
+    width: 16px;
+    height: 16px;
+    color: var(--primary-color);
+  }
+
+  .text {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 160px;
+    color: var(--text-color);
+  }
+}
+
 </style>
 
 <style lang="less">

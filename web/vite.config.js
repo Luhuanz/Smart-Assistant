@@ -24,6 +24,7 @@ export default defineConfig(({ mode }) => {
         ignored: ['**/node_modules/**', '**/dist/**'],
       },
       host: '0.0.0.0',
+      port: 3100,
     }
   }
 })

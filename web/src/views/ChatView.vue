@@ -1,5 +1,6 @@
 <template>
   <div class="chat-container">
+<!--    左边是侧边栏（对话列表 conversations）-->
     <div class="conversations" :class="{ 'is-open': state.isSidebarOpen }">
       <div class="actions">
         <!-- <div class="action new" @click="addNewConv"><FormOutlined /></div> -->
@@ -23,11 +24,13 @@
         </div>
       </div>
     </div>
+<!--    聊天组件（ChatComponent） 渲染右边聊天内容区域。  把当前选中的对话 (convs[curConvId]) 作为 prop 传给 ChatComponent,传递状态对象 state-->
     <ChatComponent
       :conv="convs[curConvId]"
       :state="state"
       @rename-title="renameTitle"
       @newconv="addNewConv"/>
+<!--  重命名对话&新建对话-->
   </div>
 </template>
 
@@ -36,6 +39,7 @@ import { reactive, ref, watch, onMounted } from 'vue'
 
 import ChatComponent from '@/components/ChatComponent.vue'
 import { DeleteOutlined, CommentOutlined, PlusCircleOutlined } from '@ant-design/icons-vue'
+// 从 localStorage 里读取历史对话记录，如果没有就用一个初始默认对话。
 const convs = reactive(JSON.parse(localStorage.getItem('chat-convs')) || [
   {
     id: 0,

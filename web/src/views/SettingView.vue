@@ -2,7 +2,18 @@
   <div class="">
     <HeaderComponent title="设置" class="setting-header">
       <template #description>
-        <p>配置文件也可以在 <code>saves/config/base.yaml</code> 中修改</p>
+            <a-form-item label="主题模式">
+  <a-select
+    v-model:value="themeMode"
+    style="width: 200px"
+    @change="onThemeChange"
+  >
+    <a-select-option value="light">亮色模式</a-select-option>
+    <a-select-option value="dark">暗黑模式</a-select-option>
+    <a-select-option value="system">跟随系统</a-select-option>
+  </a-select>
+</a-form-item>
+<!--        <p>配置文件也可以在 <code>saves/config/base.yaml</code> 中修改</p>-->
       </template>
       <template #actions>
         <a-button :type="isNeedRestart ? 'primary' : 'default'" @click="sendRestart" :icon="h(ReloadOutlined)">
@@ -10,6 +21,7 @@
         </a-button>
       </template>
     </HeaderComponent>
+
     <div class="setting-container layout-container">
       <div class="sider" v-if="state.windowWidth > 520">
         <a-button type="text" :class="{ activesec: state.section === 'base'}" @click="state.section='base'" :icon="h(SettingOutlined)"> 基本设置 </a-button>
@@ -285,20 +297,27 @@ import {
   ReloadOutlined,
   SettingOutlined,
   CodeOutlined,
-  ExceptionOutlined,
+
   FolderOutlined,
   DeleteOutlined,
   EditOutlined,
   InfoCircleOutlined,
   DownOutlined,
-  UpOutlined,
+
   LoadingOutlined,
 } from '@ant-design/icons-vue';
 import HeaderComponent from '@/components/HeaderComponent.vue';
 import TableConfigComponent from '@/components/TableConfigComponent.vue';
 import { notification, Button } from 'ant-design-vue';
 import { modelIcons } from '@/utils/modelIcon'
+import { setTheme } from '@/assets/theme.js'
 
+const themeMode = ref(localStorage.getItem('theme') || 'system');
+
+const onThemeChange = (value) => {
+  themeMode.value = value;
+  setTheme(value);
+}
 
 const configStore = useConfigStore()
 const items = computed(() => configStore.config._config_items)

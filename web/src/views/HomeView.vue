@@ -1,173 +1,140 @@
 <template>
-  <div class="welcome">
-    <header class="glass-header">江南语析</header>
-    <h1>{{ title }}</h1>
-    <p>大模型驱动的知识库管理工具</p>
-    <button class="home-btn" @click="goToChat">开始对话</button>
-    <img src="/home.png" alt="Placeholder Image" />
+  <section class="welcome" ref="root">
+    <header class="app-header">
+      <h1 class="visually-hidden">{{ resolvedTitle }}</h1>
+    </header>
 
-    <div class="github-info">
-      <a href="https://github.com/xerrors/Yuxi-Know" target="_blank">
-        <svg height="24" width="24" viewBox="0 0 16 16" version="1.1">
-          <path fill-rule="evenodd" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"></path>
-        </svg>
-        <span class="stars-count">{{ isLoadingStars ? '加载中...' : githubStars }} ⭐</span>
-      </a>
-    </div>
+    <main class="hero">
+      <h2 class="hero__title" v-text="resolvedTitle" />
+      <p class="hero__subtitle">大模型驱动的知识库管理工具</p>
+      <button class="cta" @click="goToChat" aria-label="开始对话">
+        开始对话
+      </button>
+      <img class="hero__img" src="/home.jpg" alt="彩色宝可梦知识图谱插图" loading="lazy" />
+    </main>
 
-    <footer>© 江南语析 2025 [WIP] v0.12.138</footer>
-  </div>
+    <footer class="app-footer">
+      © {{ new Date().getFullYear() }} Poké Knowledge. All rights reserved.
+    </footer>
+  </section>
 </template>
 
 <script setup>
-import { reactive, ref, onMounted } from 'vue'
+import { computed } from 'vue'
 import { useRouter } from 'vue-router'
 
-const title = ref('📢 Yuxi-Know ✨')
-const router = useRouter()
-const githubStars = ref(0)
-const isLoadingStars = ref(false)
-
-const goToChat = () => {
-  router.push("/chat")
-}
-
-// 获取GitHub stars数量
-const fetchGithubStars = async () => {
-  try {
-    isLoadingStars.value = true
-    const response = await fetch('https://api.github.com/repos/xerrors/Yuxi-Know')
-    const data = await response.json()
-    githubStars.value = data.stargazers_count
-  } catch (error) {
-    console.error('获取GitHub stars失败:', error)
-  } finally {
-    isLoadingStars.value = false
-  }
-}
-
-onMounted(() => {
-  fetchGithubStars()
+/**
+ * Optional title prop so页面可复用
+ */
+const props = defineProps({
+  title: { type: String, default: '可萌助手' }
 })
+const resolvedTitle = computed(() => props.title)
 
+const router = useRouter()
+const goToChat = () => router.push('/chat')
 </script>
 
+<style scoped lang="less">
+/*  🎨 Variables  ---------------------------------------------------------- */
+@primary       : #2c86a8;
+@primary-dark  : #005f77;
+@text-color    : #333;
+@gradient      : linear-gradient(168deg,#ffd6eb,#ffe7ca,#d3fffb,#dbebff,#ffd8ff);
 
-<style lang="less" scoped>
+/*  🌐 Layout  ------------------------------------------------------------- */
 .welcome {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  min-height: 100vh;
-  color: #333;
-  text-align: center;
-  background: linear-gradient(168deg, #ffd6eb, #ffe7ca, #d3fffb, #dbebff, #ffd8ff);
-  background-size: 1000% 1000%;
-  animation: animateBackground 20s ease infinite;
+  --header-height: 64px;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  min-height:100vh;
+  color:@text-color;
+  text-align:center;
+  background:@gradient;
+  background-size:1000% 1000%;
+  animation:bgMove 18s ease-in-out infinite;
 }
 
-
-
-header {
-  font-size: 1.2rem;
-  font-weight: bold;
-  color: var(--main-color);
-  width: 100%;
-  padding: 1rem 0;
-  backdrop-filter: blur(10px);
-  width: 100%;
-  background-color: rgba(255, 255, 255, 0.25);
-  border-bottom: 2px solid var(--main-color);
+/* reduce‑motion 优化 */
+@media (prefers-reduced-motion: reduce) {
+  .welcome { animation:none; }
 }
 
-h1 {
-  font-size: 48px;
-  font-weight: 600;
-  margin-top: calc(20vh - 80px);
-  margin-bottom: 0;
+.app-header {
+  height:var(--header-height);
+  width:100%;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  backdrop-filter:blur(12px);
+  background:rgba(255,255,255,.45);
+  border-bottom:1px solid fade(@primary,30%);
 }
 
-p {
-  font-size: 18px;
-  text-align: center;
+.hero {
+  flex:1 0 auto;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  width:100%;
+  padding:clamp(1rem,4vw,4rem);
 }
 
-button.home-btn {
-  padding: 0.5rem 2rem;
-  font-size: 24px;
-  font-weight: bold;
-  color: white;
-  background-color: #333;
-  border: none;
-  border-radius: 3rem;
-  cursor: pointer;
-  transition: all 0.3s;
-  margin-top: 20px;
-  margin-bottom: calc(15vh - 80px);
-  transition: all 0.3s;
+.hero__title {
+  font-size:clamp(2.5rem,6vw,3.75rem);
+  font-weight:700;
+  margin:0 0 .5rem;
+}
+
+.hero__subtitle {
+  font-size:clamp(1rem,2.2vw,1.25rem);
+  margin:0 0 1.75rem;
+}
+
+.cta {
+  padding:.65rem 2.5rem;
+  font-size:clamp(1rem,2.4vw,1.35rem);
+  font-weight:600;
+  color:#fff;
+  background:@primary-dark;
+  border:none;
+  border-radius:999px;
+  cursor:pointer;
+  transition:all .25s ease;
 
   &:hover {
-    background-color: #555;
-    transform: translateY(-2px);
-    box-shadow: 0px 5px 10px rgba(0, 0, 0, 0.1);
+    background:darken(@primary-dark,6%);
+    transform:translateY(-2px);
+    box-shadow:0 4px 12px rgba(0,0,0,.15);
   }
 }
 
-img {
-  width: 700px;
-  height: auto;
-  object-fit: cover;
-  box-shadow: 0px 5px 10px rgba(0, 0, 0, 0.05);
-  border-radius: 1rem;
-  max-width: 90%;
+.hero__img {
+  width:min(720px,90%);
+  height:auto;
+  margin-top:clamp(1.5rem,5vw,3rem);
+  border-radius:1rem;
+  object-fit:cover;
+  box-shadow:0 5px 12px rgba(0,0,0,.08);
 }
 
-.github-info {
-  margin-top: 20px;
-
-  a {
-    display: flex;
-    align-items: center;
-    text-decoration: none;
-    color: #333;
-    padding: 8px 16px;
-    border-radius: 20px;
-    background-color: rgba(255, 255, 255, 0.5);
-    transition: all 0.3s;
-
-    &:hover {
-      background-color: rgba(255, 255, 255, 0.8);
-      transform: translateY(-2px);
-      box-shadow: 0px 3px 8px rgba(0, 0, 0, 0.1);
-    }
-
-    svg {
-      margin-right: 8px;
-    }
-
-    .stars-count {
-      font-weight: 600;
-      font-size: 16px;
-    }
-  }
+.app-footer {
+  padding:.75rem 0 1.25rem;
+  font-size:.875rem;
+  color:fade(@text-color,60%);
 }
 
-footer {
-  font-size: 1rem;
-  color: #666;
-  margin-top: auto;
-  padding: 1rem 0;
+/*  💫 Background animation  ---------------------------------------------- */
+@keyframes bgMove {
+  0%{background-position:0% 50%}
+  50%{background-position:100% 50%}
+  100%{background-position:0% 50%}
 }
-/* 动态背景动画 */
-@keyframes animateBackground {
-  0% {
-    background-position: 0% 50%;
-  }
-  50% {
-    background-position: 100% 50%;
-  }
-  100% {
-    background-position: 0% 50%;
-  }
+
+/*  ♿ 隐藏但可读标题  ------------------------------------------------------ */
+.visually-hidden {
+  border:0;clip:rect(0 0 0 0);height:1px;margin:-1px;overflow:hidden;padding:0;position:absolute;width:1px;
 }
 </style>

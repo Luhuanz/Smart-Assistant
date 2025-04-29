@@ -80,18 +80,22 @@
         </div>
       </div>
     </div>
-    <div v-if="conv.messages.length == 0" class="chat-examples">
-      <h1>你好，我是可萌，一个基于宝可梦知识图谱的智能助手</h1>
-      <div class="opts">
-        <div
-          v-for="(exp, key) in examples"
-          :key="key"
-          @click="conv.inputText = exp"
-        >
-          {{ exp }}
-        </div>
+<div v-if="conv.messages.length == 0" class="chat-examples">
+  <h1>你好，我是可萌，一个基于宝可梦知识图谱的智能助手</h1>
+  <div class="example-cards">
+    <div
+      class="card"
+      v-for="(exp, key) in examples"
+      :key="key"
+      @click="conv.inputText = exp"
+    >
+      <div class="blob"></div>
+      <div class="bg">
+        <span style="z-index: 3">{{ exp }}</span>
       </div>
     </div>
+  </div>
+</div>
     <div class="chat-box" :class="{ 'wide-screen': meta.wideScreen, 'font-smaller': meta.fontSize === 'smaller', 'font-larger': meta.fontSize === 'larger' }">
       <MessageComponent
         v-for="message in conv.messages"
@@ -839,6 +843,85 @@ const selectModel = (provider, name) => {
   }
 
 }
+
+.example-cards {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  justify-content: center;
+  margin-top: 20px;
+}
+
+.card {
+  position: relative;
+  width: 200px;
+  height: 250px;
+  border-radius: 14px;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 20px 20px 60px #bebebe, -20px -20px 60px #ffffff;
+  cursor: pointer;
+}
+
+.bg {
+  position: absolute;
+  top: 5px;
+  left: 5px;
+  width: 190px;
+  height: 240px;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(24px);
+  border-radius: 10px;
+  outline: 2px solid white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  font-weight: bold;
+  z-index: 2;
+  text-align: center;
+  padding: 12px;
+  transition: transform 0.2s ease;
+}
+
+.card:hover .bg {
+  transform: scale(1.03);
+}
+
+.blob {
+  position: absolute;
+  z-index: 1;
+  top: 50%;
+  left: 50%;
+  width: 150px;
+  height: 150px;
+  border-radius: 50%;
+  background-color: #ff0000;
+  opacity: 1;
+  filter: blur(12px);
+  animation: blob-bounce 5s infinite ease;
+}
+
+@keyframes blob-bounce {
+  0% {
+    transform: translate(-100%, -100%) translate3d(0, 0, 0);
+  }
+  25% {
+    transform: translate(-100%, -100%) translate3d(100%, 0, 0);
+  }
+  50% {
+    transform: translate(-100%, -100%) translate3d(100%, 100%, 0);
+  }
+  75% {
+    transform: translate(-100%, -100%) translate3d(0, 100%, 0);
+  }
+  100% {
+    transform: translate(-100%, -100%) translate3d(0, 0, 0);
+  }
+}
+
 
 .chat-box {
   width: 100%;

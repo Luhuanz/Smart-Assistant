@@ -1,8 +1,13 @@
-from src import config, knowledge_base, graph_base
-from src.models.rerank_model import get_reranker
+
+from src import config
+from src.models.reranker_model import RerankerWrapper
 from src.utils.logger import LogManager
 from src.models import select_model
 from prompts import *
+from agent.kg_agent import KGQueryAgent
+from src.stores import  KnowledgeBase
+from rag.core.operators import HyDEOperator
+knowledge_base = KnowledgeBase()
 
 _log = LogManager()
 
@@ -11,10 +16,13 @@ class Retriever:
 
     def __init__(self):
         self._load_models()
+        self.kg_agent = KGQueryAgent()
+        self.default_distance_threshold = config.get("default_distance_threshold", 0.5)
+        self.top_k = config.get("default_top_k", 10)
 
     def _load_models(self):
         if config.enable_reranker:
-            self.reranker = get_reranker(config)
+            self.reranker = RerankerWrapper(config)
 
         if config.enable_web_search:
             from api.websearch.websearcher import LiteWebSearcher, TavilyBasicSearcher
@@ -77,17 +85,17 @@ class Retriever:
         raise NotImplementedError
 
     def query_graph(self, query, history, refs):
-        results = []
-        if refs["meta"].get("use_graph") and config.enable_knowledge_base:
-            for entity in refs["entities"]:
-                result = graph_base.query_by_vector(entity)
-                if result != []:
-                    results.extend(result)
-        return {"results": self.format_query_results(results)}
+        if refs["meta"].get("use_graph"):
+            # 调用 KGQueryAgent.query，传hops参数
+            result = self.kg_agent.query(
+                query,
+                hops=refs["meta"].get("graphHops", 2)
+            )
+            # result = {"answer": "...", "subgraph": {nodes,edges}}
+            return result
+        return {"answer": None, "subgraph": None}
 
     def query_knowledgebase(self, query, history, refs):
-        """查询知识库"""
-
         response = {
             "results": [],
             "all_results": [],
@@ -96,26 +104,27 @@ class Retriever:
         }
 
         meta = refs["meta"]
-
         db_id = meta.get("db_id")
         if not db_id or not config.enable_knowledge_base:
             response["message"] = "知识库未启用、或未指定知识库、或知识库不存在"
             return response
 
+        # 重写查询（如果有）
         rw_query = self.rewrite_query(query, history, refs)
-
-        _log.debug(f"{meta=}")
-        query_result = knowledge_base.query(query=rw_query,
-                                            db_id=db_id,
-                                            distance_threshold=meta.get("distanceThreshold", 0.5),
-                                            rerank_threshold=meta.get("rerankThreshold", 0.1),
-                                            max_query_count=meta.get("maxQueryCount", 20),
-                                            top_k=meta.get("topK", 10))
-
-        response["results"] = query_result["results"]
-        response["all_results"] = query_result["all_results"]
         response["rw_query"] = rw_query
 
+        try:
+            kb_res = knowledge_base.search(
+                query=rw_query,
+                db_id=db_id,
+                distance_threshold=meta.get("distanceThreshold", self.default_distance_threshold),
+                rerank=True,
+                top_k=meta.get("topK", self.top_k)
+            )
+            response["results"] = kb_res["results"]
+            response["all_results"] = kb_res["all_results"]
+        except Exception as e:
+            response["message"] = f"检索出错: {e}"
         return response
 
     def query_web(self, query, history, refs):
@@ -125,7 +134,7 @@ class Retriever:
             return {"results": [], "message": "Web search is disabled"}
 
         try:
-            search_results = self.web_searcher.search(query, max_results=5)
+            search_results = self.web_searcher.search(query, top_k=5)
         except Exception as e:
             _log.error(f"Web search error: {str(e)}")
             return {"results": [], "message": "Web search error"}
@@ -134,8 +143,8 @@ class Retriever:
 
     def rewrite_query(self, query, history, refs):
         """重写查询"""
-        model_provider = config.model_provider_lite
-        model_name = config.model_name_lite
+        model_provider = config.model_provider
+        model_name = config.model_name
         model = select_model(config, model_provider=model_provider, model_name=model_name)
         if refs["meta"].get("mode") == "search":  # 如果是搜索模式，就使用 meta 的配置，否则就使用全局的配置
             rewrite_query_span = refs["meta"].get("use_rewrite_query", "off")
@@ -151,16 +160,16 @@ class Retriever:
             rewritten_query = model.predict(rewritten_query_prompt).content
 
         if rewrite_query_span == "hyde":
-            hy_doc = model.predict(rewritten_query).content
-            rewritten_query = f"{rewritten_query} {hy_doc}"
+            res = HyDEOperator.call(model_callable=model.predict, query=query, context_str=history_query)
+            rewritten_query = res.content
 
         return rewritten_query
 
     def reco_entities(self, query, history, refs):
         """识别句子中的实体"""
         query = refs.get("rewritten_query", query)
-        model_provider = config.model_provider_lite
-        model_name = config.model_name_lite
+        model_provider = config.model_provider
+        model_name = config.model_name
         model = select_model(config, model_provider=model_provider, model_name=model_name)
 
         entities = []
@@ -228,7 +237,7 @@ class Retriever:
         return formatted_results
 
     def format_query_results(self, results):
-        logger.debug(f"Graph Query Results: {results}")
+        _log.debug(f"Graph Query Results: {results}")
         formatted_results = {"nodes": [], "edges": []}
         node_dict = {}
 

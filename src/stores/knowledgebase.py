@@ -1,0 +1,270 @@
+import os
+import shutil
+import time
+import traceback
+import random
+from typing import List, Optional, Dict, Any
+
+from pymilvus import MilvusClient, MilvusException
+
+from src import config
+from src.utils import logger, hashstr
+from src.core.indexing import chunk, read_text, chunk_file
+from src.stores.kb_db_manager import kb_db_manager
+
+# 知识库管理
+class KnowledgeBase:
+    """
+    集成文档分块、向量化、Milvus 存储、检索、知识库管理的全能版
+
+    功能：
+    - 知识库管理：创建/删除 库，获取库列表和详情
+    - 文档导入：单文件/目录导入，支持多格式 & OCR
+    - 向量存储：Milvus Collection 管理，插入文档向量
+    - 检索：基于向量相似度和可选重排序
+    - 文件管理：记录文件状态，支持批量迁移、备份
+    """
+
+    def __init__(
+        self,
+        milvus_uri: Optional[str] = None,
+        embedding_config: Optional[Dict[str, Any]] = None
+    ) -> None:
+        # 工作目录 & DB 管理
+        self.work_dir = os.path.join(config.save_dir, "data")
+        os.makedirs(self.work_dir, exist_ok=True)
+        self.db_manager = kb_db_manager
+
+        # 检索参数
+        self.default_distance_threshold = config.get("default_distance_threshold", 0.5)
+        self.default_rerank_threshold = config.get("default_rerank_threshold", 0.1)
+        self.default_max_query_count = config.get("default_max_query_count", 20)
+        self.top_k = config.get("default_top_k", 10)
+
+        # 初始化模型与服务
+        self._check_migration()
+        self._load_embedding_model(embedding_config)
+        self._connect_milvus(milvus_uri)
+
+    # -- 数据迁移 -----------------------------------------------------------
+    def _check_migration(self):
+        legacy = os.path.join(self.work_dir, "database.json")
+        if os.path.exists(legacy):
+            logger.info("检测到旧 JSON 知识库，迁移中...")
+            try:
+                from src.stores.migrate_kb_to_sqlite import migrate_json_to_sqlite
+                migrate_json_to_sqlite()
+                logger.info("迁移完成！")
+            except Exception as e:
+                logger.error(f"迁移失败: {e}")
+
+    # -- Embedding 模型 ---------------------------------------------------
+    def _load_embedding_model(self, embedding_config: Optional[Dict[str, Any]]):
+        if not config.enable_knowledge_base:
+            self.embed_model = None
+            return
+        from src.models.embedding import get_embedding_model
+        conf = embedding_config or config
+        self.embed_model = get_embedding_model(conf)
+        if config.enable_reranker:
+            from src.models.rerank_model import get_reranker
+            self.reranker = get_reranker(conf)
+        else:
+            self.reranker = None
+
+    # -- Milvus 连接 --------------------------------------------------------
+    def _connect_milvus(self, uri: Optional[str]):
+        try:
+            target = uri or os.getenv("MILVUS_URI", config.get("milvus_uri", "http://milvus:19530"))
+            self.client = MilvusClient(uri=target)
+            self.client.list_collections()
+            logger.info(f"Milvus 已连接: {target}")
+        except MilvusException as e:
+            logger.error(f"连接 Milvus 失败: {e}")
+            raise
+
+    # -- 知识库管理 --------------------------------------------------------
+    def create_database(self, name: str, description: str, dimension: Optional[int] = None) -> Dict[str, Any]:
+        dim = dimension or self.embed_model.get_dimension()
+        db_id = f"kb_{hashstr(name)}"
+        info = self.db_manager.create_database(
+            db_id=db_id,
+            name=name,
+            description=description,
+            embed_model=self.embed_model.embed_model_fullname,
+            dimension=dim
+        )
+        self._ensure_directories(db_id)
+        self.add_collection(db_id, dim)
+        return info
+
+    def delete_database(self, db_id: str) -> None:
+        if self.client.has_collection(db_id):
+            self.client.drop_collection(db_id)
+        self.db_manager.delete_database(db_id)
+        folder = os.path.join(self.work_dir, db_id)
+        if os.path.isdir(folder): shutil.rmtree(folder)
+
+    def list_databases(self) -> List[Dict[str, Any]]:
+        out = []
+        for db in self.db_manager.get_all_databases():
+            record = db.copy()
+            try:
+                record['metadata'] = self.get_collection_info(db['db_id'])
+            except Exception:
+                record['metadata'] = {'error': '无法获取'}
+            out.append(record)
+        return out
+
+    # -- 文件与文档导入 ----------------------------------------------------
+    def ingest_file(
+        self,
+        db_id: str,
+        path: str,
+        do_ocr: bool = False,
+        chunk_size: int = 1000,
+        chunk_overlap: int = 100,
+        ocr_det_threshold: float = 0.3
+    ) -> str:
+        """
+        导入单个文件：
+        - PDF 可选 OCR
+        - 其他文本使用 chunk & read_text
+        - 自动记录并插入 Milvus
+        返回 file_id
+        """
+        ext = path.split('.')[-1].lower()
+        file_id = f"file_{hashstr(path+str(time.time()))}"
+        _, upload_folder = self._ensure_directories(db_id)
+        os.makedirs(upload_folder, exist_ok=True)
+
+        # 分块
+        try:
+            if ext == 'pdf' or do_ocr:
+                docs = chunk_file(path, chunk_size, chunk_overlap, True, ocr_det_threshold)
+            else:
+                text = read_text(path)
+                docs = chunk(text, chunk_size, chunk_overlap)
+        except Exception as e:
+            logger.error(f"分块失败: {e}")
+            raise
+
+        chunks = [d.dict() for d in docs]
+
+        # 数据库记录
+        self.db_manager.add_file(
+            db_id=db_id,
+            file_id=file_id,
+            filename=os.path.basename(path),
+            path=path,
+            file_type=ext,
+            status='processing'
+        )
+
+        # 向量插入
+        try:
+            texts = [c['text'] for c in chunks]
+            self._insert_vectors(db_id, file_id, texts, chunks)
+            self.db_manager.update_file_status(file_id, 'done')
+        except Exception as e:
+            logger.error(f"向量插入失败: {e}\n{traceback.format_exc()}")
+            self.db_manager.update_file_status(file_id, 'failed')
+
+        return file_id
+
+    def ingest_directory(
+        self,
+        db_id: str,
+        folder: str,
+        suffixes: Optional[List[str]] = None,
+        **kwargs
+    ) -> List[str]:
+        suffixes = suffixes or ['.pdf', '.txt', '.md', '.docx']
+        ids = []
+        for root, _, files in os.walk(folder):
+            for f in files:
+                if any(f.lower().endswith(s) for s in suffixes):
+                    path = os.path.join(root, f)
+                    fid = self.ingest_file(db_id, path, **kwargs)
+                    ids.append(fid)
+        return ids
+
+    def _ensure_directories(self, db_id: str) -> (str, str):
+        base = os.path.join(self.work_dir, db_id)
+        upload = os.path.join(base, 'uploads')
+        os.makedirs(base, exist_ok=True)
+        os.makedirs(upload, exist_ok=True)
+        return base, upload
+
+    # -- Milvus Collection 操作 -------------------------------------------
+    def add_collection(self, name: str, dimension: int) -> None:
+        if self.client.has_collection(name):
+            self.client.drop_collection(name)
+        self.client.create_collection(name, dimension=dimension)
+
+    def get_collection_info(self, name: str) -> Dict[str, Any]:
+        try:
+            info = self.client.describe_collection(name)
+            info.update(self.client.get_collection_stats(name))
+            return info
+        except MilvusException as e:
+            return {'name': name, 'error': str(e)}
+
+    def _insert_vectors(
+        self,
+        collection_name: str,
+        file_id: str,
+        docs: List[str],
+        chunk_infos: List[Dict[str, Any]]
+    ) -> Any:
+        if not self.client.has_collection(collection_name):
+            raise ValueError("Collection不存在")
+
+        vecs = self.embed_model.batch_encode(docs)
+        entities = []
+        for idx, v in enumerate(vecs):
+            meta = chunk_infos[idx]
+            meta.update({'file_id': file_id})
+            entities.append({
+                'id': int(random.random()*1e12),
+                'vector': v,
+                **meta
+            })
+        return self.client.insert(collection_name=collection_name, data=entities)
+
+    # -- 检索 --------------------------------------------------------------
+    def search(
+        self,
+        query: str,
+        db_id: str,
+        distance_threshold: Optional[float] = None,
+        rerank: bool = True,
+        top_k: Optional[int] = None
+    ) -> Dict[str, List[Dict[str, Any]]]:
+        dt = distance_threshold or self.default_distance_threshold
+        tk = top_k or self.top_k
+
+        vector = self.embed_model.batch_encode([query])[0]
+        hits = self.client.search(db_id, [vector], limit=self.default_max_query_count,
+                                   output_fields=['text','file_id'])[0]
+        results = [ {'entity': h.entity, 'distance': h.distance} for h in hits ]
+
+        # 阈值过滤
+        filtered = [r for r in results if r['distance'] < dt]
+
+        # 可选重排序
+        if rerank and self.reranker and filtered:
+            texts = [r['entity'].text for r in filtered]
+            scores = self.reranker.compute_score([query,texts], normalize=False)
+            for r,s in zip(filtered, scores): r['rerank_score']=s
+            filtered = [r for r in filtered if r.get('rerank_score',0)>self.default_rerank_threshold]
+            filtered.sort(key=lambda x: x['rerank_score'], reverse=True)
+
+        return {
+            'results': filtered[:tk],
+            'all_results': results
+        }
+
+    def restart(self):
+        self._load_embedding_model(None)
+        self._connect_milvus(None)

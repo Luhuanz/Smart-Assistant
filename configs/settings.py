@@ -19,6 +19,7 @@ TAVILY_API_KEY = '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'
 SerperAPI = 'https://google.serper.dev/search'
 
 # data
+JSON_DATA=os.path.join(BASE_DIR, 'resources', 'data','json_data')
 ENTITY_DATA = os.path.join(BASE_DIR, 'resources', 'data', 'entity_data')
 
 NER_DATA = os.path.join(BASE_DIR, 'resources', 'data', 'ner_data')

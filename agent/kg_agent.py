@@ -1,8 +1,5 @@
 import warnings
-
 warnings.filterwarnings("ignore")
-import os
-import pickle
 import sys
 from pathlib import Path
 from typing import Dict, List, Any, Iterator
@@ -13,23 +10,103 @@ from langchain_core.tools import tool
 from langchain_openai import ChatOpenAI
 from langgraph.prebuilt import create_react_agent
 from py2neo import Graph
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from transformers import BertTokenizer
 from configs.settings import *
-
-# 获取当前文件所在目录的父目录（即项目根目录）
+from src.ner.ner_model import *
+# ---------- 项目路径处理 ----------
 current_dir = Path(__file__).parent
 project_root = current_dir.parent.resolve()
-
-# 将项目根目录添加到Python路径
 sys.path.insert(0, str(project_root))
-from src.ner.ner_model import *
 
-# Neo4j 连接配置
+# ---------- Neo4j 连接 ----------
 NEO4J_URI = "bolt://localhost:7687"
 NEO4J_AUTH = ("neo4j", "tczslw278")  # 替换为实际认证信息
 g = Graph(NEO4J_URI, auth=NEO4J_AUTH)
 
+
+
+# ========== 子图提取器 ==========
+from typing import List, Dict
+from py2neo import Graph
+import logging, traceback
+
+# ========== 子图提取器 ==========
+class GraphSubgraphExtractor:
+    """给定实体名，抽取 n 跳子图并格式化为 {nodes, edges}"""
+
+    def __init__(self, graph: Graph):
+        self.graph = graph
+
+    # ---------- Cypher 查询 ----------
+    def _query(self, entity: str, hops: int, limit: int = 200):
+        cypher = f"""
+        MATCH (n {{name:$name}})-[r*1..{hops}]-(m)
+        RETURN n AS n, r, m AS m
+        LIMIT $limit
+        """
+        return self.graph.run(cypher, name=entity, limit=limit).data()
+
+    # ---------- 单条关系→节点/边 ----------
+    @staticmethod
+    def _extract_relationship(rel, node_dict):
+        try:
+            rel_id = rel.element_id
+            source, target = rel.nodes
+            sid, tid = source.element_id, target.element_id
+
+            # 节点入缓存
+            for node in (source, target):
+                nid = node.element_id
+                if nid not in node_dict:
+                    node_dict[nid] = {
+                        "id": nid,
+                        "name": node._properties.get("name", "Unknown")
+                    }
+            # 构造边
+            return {
+                "id": rel_id,
+                "type": rel._properties.get("type", rel.type),
+                "source_id": sid,
+                "target_id": tid,
+                "source_name": node_dict[sid]["name"],
+                "target_name": node_dict[tid]["name"],
+            }
+        except Exception as e:
+            logging.error(f"关系解析失败: {e}\n{traceback.format_exc()}")
+            return None
+
+    # ---------- 原 GraphDatabase 风格的格式化 ----------
+    @classmethod
+    def _format(cls, raw: List[Dict]) -> Dict:
+        node_dict, edge_dict = {}, {}
+
+        for row in raw:                       # row = {"n": node1, "r": [rel1,...], "m": node2}
+            n1, rels, n2 = row["n"], row["r"], row["m"]
+
+            # 先把两端节点放进去
+            for node in (n1, n2):
+                if node.element_id not in node_dict:
+                    node_dict[node.element_id] = {
+                        "id": node.element_id,
+                        "name": node._properties.get("name", "Unknown")
+                    }
+
+            # 遍历关系列表
+            for rel in rels:
+                edge_info = cls._extract_relationship(rel, node_dict)
+                if edge_info:
+                    edge_dict[edge_info["id"]] = edge_info
+
+        return {
+            "nodes": list(node_dict.values()),
+            "edges": list(edge_dict.values())
+        }
+
+    # ---------- 对外接口 ----------
+    def get_subgraph(self, entity: str, hops: int = 2, limit: int = 200):
+        raw = self._query(entity, hops, limit)
+        return None if not raw else self._format(raw)
 
 class EntityRecognitionSingleton:
     _instance = None
@@ -86,6 +163,7 @@ class KGQueryAgent:
         """
         self.llm = llm or self._default_llm()
         self.ner = EntityRecognitionSingleton()
+        self.subgraph_extractor = GraphSubgraphExtractor(g)
         self.tools = self._init_tools()
         self.agent = self._create_agent()
 
@@ -105,7 +183,7 @@ class KGQueryAgent:
             state_modifier="当用户询问关于宝可梦、人物、城镇、地区、属性的相关信息时，你将使用这些函数来查询neo4j数据库中的数据"
         )
 
-    def query(self, question: str, stream: bool = False) -> Iterator[dict[str, Any] | Any] | dict[str, Any] | Any:
+    def query(self, question: str,hops: int = 2, stream: bool = False) -> Iterator[dict[str, Any] | Any] | dict[str, Any] | Any:
         """
         执行知识图谱查询
         :param question: 自然语言问题
@@ -116,7 +194,18 @@ class KGQueryAgent:
 
         if stream:
             return self.agent.stream(input_message, stream_mode="updates")
-        return self.agent.invoke(input_message)
+        llm_ans= self.agent.invoke(input_message)
+        try:
+            ner_entities = self.ner.ner(question)
+
+            first_entity = ner_entities[0]["text"] if ner_entities else None
+        except Exception:
+            first_entity = None
+
+        subgraph_json = (self.subgraph_extractor.get_subgraph(first_entity, hops=hops)
+                         if first_entity else None)
+
+        return {"answer": llm_ans, "subgraph": subgraph_json}
 
     def _init_tools(self) -> List:
         """初始化所有查询工具"""
@@ -139,7 +228,17 @@ class KGQueryAgent:
 
         class Entity(BaseModel):
             question: str
+        class SubgraphQuery(BaseModel):
+            entity: str = Field(..., description="实体名称")
+            hops: int = Field(2, description="跳数 1~4 等")
 
+        @tool(args_schema=SubgraphQuery)
+        def get_entity_subgraph(entity: str, hops: int = 2):
+            """返回实体的 n 跳子图 JSON（{nodes, edges}）"""
+            data = self.subgraph_extractor.get_subgraph(entity, hops=hops)
+            if not data:
+                return {"message": f"未找到实体 {entity} 的子图"}
+            return data
         # 宝可梦相关查询
         @tool(args_schema=PokemonQuery)
         def get_pokemon_chinese_name(pokemon: str):
@@ -359,7 +458,7 @@ class KGQueryAgent:
             except Exception as e:
                 return {"error": f"查询失败: {str(e)}", "sql": sql}
 
-        return [
+        return [get_entity_subgraph]+[
             get_pokemon_chinese_name,
             get_pokemon_english_name,
             get_pokemon_ability,
@@ -409,7 +508,9 @@ class KGQueryAgent:
 # 使用示例
 if __name__ == "__main__":
     agent = KGQueryAgent()
+    # 默认 2 跳
+    res = agent.query("小火龙哪些地方可以抓到？")
+    print(res["subgraph"])  # 前端直接吃
 
-    # 示例查询
-    result = agent.query("小火龙哪些地方可以抓到？")
-    print(result)
+    # 指定 4 跳
+    res = agent.query("火恐龙相关人物有哪些？", hops=4)

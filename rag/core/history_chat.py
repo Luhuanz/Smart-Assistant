@@ -43,7 +43,7 @@ class HistoryManager:
         :param content: 更新后的 AI 文本内容
         """
         if self.history.messages and isinstance(self.history.messages[-1], AIMessage):
-            # 用更新的内容替换最后一条 AI 消息
+            # 用更新的内容替换最后一条AI消息
             self.history.messages[-1] = AIMessage(content=content)
         else:
             # 如果最后一条不是AI消息，则直接添加一条新的AI消息

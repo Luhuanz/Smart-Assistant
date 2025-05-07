@@ -8,10 +8,11 @@ from typing import List, Optional, Dict, Any
 from pymilvus import MilvusClient, MilvusException
 
 from src import config
-from src.utils import logger, hashstr
-from src.core.indexing import chunk, read_text, chunk_file
+from src.utils import  hashstr
+from rag.core.indexing import   chunk_file
 from src.stores.kb_db_manager import kb_db_manager
-
+from src.utils.logger import LogManager
+logger=LogManager()
 # 知识库管理
 class KnowledgeBase:
     """
@@ -67,8 +68,8 @@ class KnowledgeBase:
         conf = embedding_config or config
         self.embed_model = get_embedding_model(conf)
         if config.enable_reranker:
-            from src.models.rerank_model import get_reranker
-            self.reranker = get_reranker(conf)
+            from src.models.reranker_model import RerankerWrapper
+            self.reranker =  RerankerWrapper("siliconflow/bge-reranker-v2-m3", model_name="BAAI/bge-reranker-v2-m3")
         else:
             self.reranker = None
 
@@ -143,8 +144,8 @@ class KnowledgeBase:
             if ext == 'pdf' or do_ocr:
                 docs = chunk_file(path, chunk_size, chunk_overlap, True, ocr_det_threshold)
             else:
-                text = read_text(path)
-                docs = chunk(text, chunk_size, chunk_overlap)
+
+                docs = chunk_file(path, chunk_size, chunk_overlap)
         except Exception as e:
             logger.error(f"分块失败: {e}")
             raise

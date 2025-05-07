@@ -1,0 +1,50 @@
+[2025-05-07 22:01] [logger.py|_log] [line:74] INFO    : Loading config from saves\config\base.yaml
+[2025-05-07 22:01] [logger.py|_log] [line:76] WARNING : 
+
+======================================================================
+                        Config file not found                         
+        You can custum your config in `saves\config\base.yaml`        
+======================================================================
+
+
+[2025-05-07 22:01] [logger.py|_log] [line:76] WARNING : 提醒：MODEL_DIR （D:/Huggingface） 不存在，如果未配置，请忽略，如果配置了，请检查是否配置正确，比如 docker-compose 文件中的映射
+[2025-05-07 22:19] [logger.py|_log] [line:74] INFO    : Loading config from saves\config\base.yaml
+[2025-05-07 22:19] [logger.py|_log] [line:76] WARNING : 
+
+======================================================================
+                        Config file not found                         
+        You can custum your config in `saves\config\base.yaml`        
+======================================================================
+
+
+[2025-05-07 22:19] [logger.py|_log] [line:76] WARNING : 提醒：MODEL_DIR （D:/Huggingface） 不存在，如果未配置，请忽略，如果配置了，请检查是否配置正确，比如 docker-compose 文件中的映射
+[2025-05-07 22:23] [logger.py|_log] [line:74] INFO    : Loading config from saves\config\base.yaml
+[2025-05-07 22:23] [logger.py|_log] [line:76] WARNING : 
+
+======================================================================
+                        Config file not found                         
+        You can custum your config in `saves\config\base.yaml`        
+======================================================================
+
+
+[2025-05-07 22:23] [logger.py|_log] [line:76] WARNING : 提醒：MODEL_DIR （D:/Huggingface） 不存在，如果未配置，请忽略，如果配置了，请检查是否配置正确，比如 docker-compose 文件中的映射
+[2025-05-07 22:23] [logger.py|_log] [line:74] INFO    : Loading config from saves\config\base.yaml
+[2025-05-07 22:23] [logger.py|_log] [line:76] WARNING : 
+
+======================================================================
+                        Config file not found                         
+        You can custum your config in `saves\config\base.yaml`        
+======================================================================
+
+
+[2025-05-07 22:23] [logger.py|_log] [line:76] WARNING : 提醒：MODEL_DIR （D:/Huggingface） 不存在，如果未配置，请忽略，如果配置了，请检查是否配置正确，比如 docker-compose 文件中的映射
+[2025-05-07 22:25] [logger.py|_log] [line:74] INFO    : Loading config from saves\config\base.yaml
+[2025-05-07 22:25] [logger.py|_log] [line:76] WARNING : 
+
+======================================================================
+                        Config file not found                         
+        You can custum your config in `saves\config\base.yaml`        
+======================================================================
+
+
+[2025-05-07 22:25] [logger.py|_log] [line:76] WARNING : 提醒：MODEL_DIR （D:/Huggingface） 不存在，如果未配置，请忽略，如果配置了，请检查是否配置正确，比如 docker-compose 文件中的映射

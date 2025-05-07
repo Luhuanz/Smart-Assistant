@@ -6,6 +6,10 @@ from pathlib import Path
 from src.utils.logger import LogManager
 logger=LogManager()
 DEFAULT_MOCK_API = 'this_is_mock_api_key_in_frontend'
+cur_dir = os.path.dirname(__file__)
+
+file_path = os.path.join(cur_dir, "..", "static", "models.yaml")
+file_path = os.path.abspath(file_path)  # 变成绝对路径
 
 class SimpleConfig(dict):
 
@@ -87,7 +91,7 @@ class Config(SimpleConfig):
         从 models.yaml 和 models.private.yml 中更新 MODEL_NAMES
         """
 
-        with open(Path("/data/temp/Smart-Assistant/src/static/models.yaml"), 'r', encoding='utf-8') as f:
+        with open(file_path, 'r', encoding='utf-8') as f:
             _models = yaml.safe_load(f)
 
         # 尝试打开一个 models.private.yml 文件，用来覆盖 models.yaml 中的配置

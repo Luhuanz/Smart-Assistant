@@ -1,6 +1,7 @@
 from dotenv import load_dotenv
 
-load_dotenv(".env")
+load_dotenv("src/.env")
+load_dotenv()  # 双保险，避免未命中
 
 from concurrent.futures import ThreadPoolExecutor
 executor = ThreadPoolExecutor()

@@ -1,7 +1,7 @@
 from langchain.schema import AIMessage, HumanMessage, SystemMessage
 from langchain.memory import ChatMessageHistory
 
-from prompts import get_system_prompt
+from rag.core.prompts import get_system_prompt
 from src.utils import logger
 
 _log = logger.LogManager()

@@ -3,7 +3,7 @@ warnings.filterwarnings("ignore")
 import sys
 from pathlib import Path
 from typing import Dict, List, Any, Iterator
-
+from configs.settings import *
 import torch
 from langchain_core.messages import HumanMessage
 from langchain_core.tools import tool
@@ -124,8 +124,8 @@ class EntityRecognitionSingleton:
         self.model_name = MODEL_ROBERTA_PATH
         self.pt_path = CACHE_BERTA_MODEL
 
-        if os.path.exists(r'../resources/data/ner_data/tag2idx.npy'):
-            with open(r'../resources/data/ner_data/tag2idx.npy', 'rb') as f:
+        if os.path.exists(NER_TAG_PATH):
+            with open(NER_TAG_PATH, 'rb') as f:
                 self.tag2idx = pickle.load(f)
                 self.idx2tag = list(self.tag2idx)
         else:

@@ -80,7 +80,7 @@ services:
       - minio
     ports:
       - "19530:19530"
-      - "9091:9091"
+      - "19091:9091"
     environment:
       - ETCD_ENDPOINTS=etcd:2379
       - MINIO_ADDRESS=minio:9000

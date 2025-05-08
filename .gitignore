@@ -1,0 +1,29 @@
+# IDE
+.idea/
+.vscode/
+
+# Python cache
+__pycache__/
+*.py[cod]
+*.pkl
+
+# Env
+.env
+.env.*
+
+# Logs
+logs/
+*.log
+
+# Docker volumes & database
+docker/volumes/
+resources/cache/
+resources/models/
+
+# SQLite and DB files
+*.sqlite3
+*.db
+
+# Temporary / backup files
+*.bak
+*.tmp

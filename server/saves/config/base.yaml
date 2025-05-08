@@ -1,2 +1,23 @@
+device: cuda
+embed_model: siliconflow/BAAI/bge-m3
+enable_knowledge_base: false
+enable_knowledge_graph: false
+enable_reranker: false
+enable_web_search: true
 filename: saves/config/base.yaml
+model_dir: D:/Huggingface
+model_local_paths: {}
+model_name: Qwen/Qwen2.5-7B-Instruct
+model_provider: siliconflow
+reranker: siliconflow/BAAI/bge-reranker-v2-m3
 save_dir: saves
+use_rewrite_query: 'off'
+valuable_model_provider:
+- openai
+- deepseek
+- zhipu
+- siliconflow
+- together.ai
+- dashscope
+- ark
+- lingyiwanwu

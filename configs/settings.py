@@ -10,7 +10,7 @@ MODEL_OCR_PATH = os.path.join(BASE_DIR, 'resources', 'models', 'ocr')
 CACHE_BERTA_MODEL = os.path.join(BASE_DIR, 'resources', 'cache', 'roberta', 'best_roberta.pt')
 EMBEDDING_MODEL = 'bge-m3-pro'
 EMBEDDING_MODEL_DIM = 1024
-
+NER_TAG_PATH = os.path.join(BASE_DIR, "resources", "data", "ner_data", "tag2idx.npy")
 # api
 MODEL_API_KEY = 'sk-36oMlDApF5Nlg0v23014A4B69e864000944151Cd75D82076'
 MODEL_API_BASE = 'http://139.224.116.116:3000/v1'

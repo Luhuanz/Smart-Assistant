@@ -24,7 +24,7 @@ class MilvusService:
             openai_api_key: str = MODEL_API_KEY,
             embedding_model: str = EMBEDDING_MODEL,
             reranker_key: str = "siliconflow/bge-reranker-v2-m3",
-            reranker_local_path: str = "/data/temp1/Smart-Assistant-main/resources/models/bge-reranker-v2-m3",
+            reranker_local_path: str = MODEL_RERANKER_PATH,
             reranker_model: str = 'BAAI/bge-reranker-v2-m3',
     ):
         """

@@ -7,6 +7,7 @@ from rag.core.prompts import *
 from agent.kg_agent import KGQueryAgent # 知识图谱
 from src.stores import  KnowledgeBase
 from rag.core.operators import HyDEOperator
+import asyncio, inspect
 knowledge_base = KnowledgeBase()
 
 _log = LogManager()
@@ -128,16 +129,15 @@ class Retriever:
         return response
 
     def query_web(self, query, history, refs):
-        """查询网络"""
-
+        """查询网络：直接同步调用 WebSearcher"""
         if not (refs["meta"].get("use_web") and config.enable_web_search):
             return {"results": [], "message": "Web search is disabled"}
 
         try:
             search_results = self.web_searcher.search(query, top_k=5)
         except Exception as e:
-            _log.error(f"Web search error: {str(e)}")
-            return {"results": [], "message": "Web search error"}
+            _log.error(f"Web search error: {e}")
+            return {"results": [], "message": f"Web search error: {e}"}
 
         return {"results": search_results}
 
@@ -145,7 +145,7 @@ class Retriever:
         """重写查询"""
         model_provider = config.model_provider
         model_name = config.model_name
-        model = select_model(config, model_provider=model_provider, model_name=model_name)
+        model = select_model(model_provider=model_provider, model_name=model_name)
         if refs["meta"].get("mode") == "search":  # 如果是搜索模式，就使用 meta 的配置，否则就使用全局的配置
             rewrite_query_span = refs["meta"].get("use_rewrite_query", "off")
         else:
@@ -170,7 +170,7 @@ class Retriever:
         query = refs.get("rewritten_query", query)
         model_provider = config.model_provider
         model_name = config.model_name
-        model = select_model(config, model_provider=model_provider, model_name=model_name)
+        model = select_model(model_provider=model_provider, model_name=model_name)
 
         entities = []
         if refs["meta"].get("use_graph"):

@@ -19,9 +19,11 @@ sys.path.insert(0, str(project_root))
 # 本地模块导入
 from agent.kg_agent import KGQueryAgent
 from rag import GraphRAG
-from api.websearch.LiteWebSearcher import WebSearcher
+# from api.websearch.Searcher import WebSearcher
 from api.websearch.websearcher import *
 
+base_path = Path(__file__).parent.parent.parent  # Smart-Assistant 根目录
+artifacts_path = base_path / "rag" / "artifacts"
 
 # 辅助类
 class AgentState(MessagesState):
@@ -31,58 +33,33 @@ class AgentState(MessagesState):
 class PokemonKGChatAgent:
     """宝可梦知识图谱聊天代理"""
 
-    def __init__(self, config: Optional[Dict] = None):
-        """
-        初始化代理
-        :param config: 配置字典，包含以下可选键:
-            - neo4j_auth: (user, password) 元组
-            - llm_config: 语言模型配置
-            - graph_rag_config: 图RAG配置
-        """
-        self.config = self._init_config(config)
+    def __init__(self, openai_base_url: str = MODEL_API_BASE,
+            openai_api_key: str = MODEL_API_KEY,
+            model_name:str =MODEL_NAME
+                 ):
+        self.model_name=model_name
+        self.openai_base_url = openai_base_url
+        self.openai_api_key = openai_api_key
         self._init_components()
         self._build_graph()
-
-    def _init_config(self, config: Optional[Dict]) -> Dict:
-        """初始化默认配置"""
-        default_config = {
-            "neo4j_auth": ("neo4j", "woshishamo630"),
-            "llm_config": {
-                "model": "Doubao-pro-256k-1.5",
-                "base_url": "http://139.224.116.116:3000/v1",
-                "api_key": "sk-36oMlDApF5Nlg0v23014A4B69e864000944151Cd75D82076"
-            },
-            "graph_rag_config": {
-                "artifacts_path": "F:\\bigmodel\\meet-Pok-mon\\4.KGqa\\Pokemon-KGQA\\RAG\\artifacts",
-                "llm_config": {
-                    "model": "Doubao-pro-256k-1.5",
-                    "base_url": "http://139.224.116.116:3000/v1",
-                    "api_key": "sk-36oMlDApF5Nlg0v23014A4B69e864000944151Cd75D82076"
-                },
-                "community_level": 0
-            }
-        }
-        if config:
-            default_config.update(config)
-        return default_config
-
     def _init_components(self):
         """初始化所有组件"""
         # 初始化LLM
-        self.llm = ChatOpenAI(**self.config["llm_config"])
+        self.llm = ChatOpenAI( model=self.model_name,
+            base_url=self.openai_base_url,
+            api_key=self.openai_api_key)
 
         # 初始化知识图谱查询代理 1
         self.kgsql_agent = KGQueryAgent(llm=self.llm)
 
         # 初始化图RAG 1
         self.graph_rag = GraphRAG(
-            artifacts_path=self.config["graph_rag_config"]["artifacts_path"],
-            llm_config=self.config["graph_rag_config"]["llm_config"],
-            community_level=self.config["graph_rag_config"]["community_level"]
+            artifacts_path=str(artifacts_path),
+            community_level=0
         )
 
         # 初始化网络搜索器 0
-        self.searcher = WebSearcher()
+        self.searcher = LiteBaseSearcher()
 
     def _build_graph(self):
         """构建LangGraph状态图"""

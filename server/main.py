@@ -3,9 +3,11 @@ import uvicorn
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from server.routers import router
+from dotenv import load_dotenv
+from pathlib import Path
 
-
-
+# 强制加载.env
+load_dotenv(Path(__file__).parent.parent / ".env")
 app = FastAPI()
 app.include_router(router)
 
@@ -20,5 +22,5 @@ app.add_middleware(
 
 
 if __name__ == "__main__":
-    uvicorn.run(app, host="0.0.0.0", port=5050)
+    uvicorn.run(app, host="0.0.0.0", port=5000)
 

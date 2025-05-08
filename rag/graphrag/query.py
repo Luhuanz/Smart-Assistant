@@ -35,12 +35,7 @@ class GraphRAG:
         
         参数:
             artifacts_path: 知识图谱数据路径
-            llm_config: LLM配置字典
-                {
-                    "model": "deepseek-chat",
-                    "base_url": "http://139.224.116.116:3000/v1",
-                    "api_key": "sk-..."
-                }
+
             community_level: 社区级别阈值
         """
         self.artifacts_path = artifacts_path

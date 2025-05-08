@@ -66,7 +66,7 @@ class TavilyBasicSearcher(BaseWebSearcher):
         return search_results[:top_k]
 
 
-class LiteWebSearcher(BaseWebSearcher):
+class LiteBaseSearcher(BaseWebSearcher):
     """
     使用已有的 search() 执行最简洁的网络搜索
     """
@@ -113,8 +113,8 @@ if __name__ == "__main__":
         print("=== Tavily 搜索结果 ===")
         for i, item in enumerate(tavily_results, 1):
             print(f"{i}. 标题: {item['title']}\n   摘要: {item['content']}\n   链接: {item['url']}\n")
-        # LiteWebSearcher搜索
-        lite_searcher = LiteWebSearcher()
+        # LiteBaseSearcher
+        lite_searcher = LiteBaseSearcher()
         lite_results = await lite_searcher.search(query_text, top_k=3)
         print("=== LiteWebSearcher 搜索结果 ===")
         for i, item in enumerate(lite_results, 1):

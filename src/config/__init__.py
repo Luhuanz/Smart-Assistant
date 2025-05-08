@@ -2,14 +2,11 @@ import os
 import json
 import yaml
 from pathlib import Path
-
+from dotenv import load_dotenv
+load_dotenv()
 from src.utils.logger import LogManager
 logger=LogManager()
 DEFAULT_MOCK_API = 'this_is_mock_api_key_in_frontend'
-cur_dir = os.path.dirname(__file__)
-
-file_path = os.path.join(cur_dir, "..", "static", "models.yaml")
-file_path = os.path.abspath(file_path)  # 变成绝对路径
 
 class SimpleConfig(dict):
 
@@ -41,8 +38,12 @@ class Config(SimpleConfig):
         super().__init__()
         self._config_items = {}
         self.save_dir = "saves"
-        self.filename = str(Path("saves/config/base.yaml"))
-        os.makedirs(os.path.dirname(self.filename), exist_ok=True)
+        self.filename = str(Path(self.save_dir) / "config" / "base.yaml")
+
+        # 如果配置文件不存在，则创建目录并保存默认配置
+        if not os.path.exists(self.filename):
+            os.makedirs(os.path.dirname(self.filename), exist_ok=True)
+            self.save()
 
         self._update_models_from_file()
 
@@ -91,7 +92,7 @@ class Config(SimpleConfig):
         从 models.yaml 和 models.private.yml 中更新 MODEL_NAMES
         """
 
-        with open(file_path, 'r', encoding='utf-8') as f:
+        with open(Path("/data/temp/Smart-Assistant/src/static/models.yaml"), 'r', encoding='utf-8') as f:
             _models = yaml.safe_load(f)
 
         # 尝试打开一个 models.private.yml 文件，用来覆盖 models.yaml 中的配置

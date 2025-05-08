@@ -3,8 +3,8 @@ from src import config
 from src.models.reranker_model import RerankerWrapper
 from src.utils.logger import LogManager
 from src.models import select_model
-from prompts import *
-from agent.kg_agent import KGQueryAgent
+from rag.core.prompts import *
+from agent.kg_agent import KGQueryAgent # 知识图谱
 from src.stores import  KnowledgeBase
 from rag.core.operators import HyDEOperator
 knowledge_base = KnowledgeBase()
@@ -25,15 +25,15 @@ class Retriever:
             self.reranker = RerankerWrapper(config)
 
         if config.enable_web_search:
-            from api.websearch.websearcher import LiteWebSearcher, TavilyBasicSearcher
-            self.web_searcher = LiteWebSearcher()
+            from api.websearch.websearcher import LiteBaseSearcher, TavilyBasicSearcher
+            self.web_searcher = LiteBaseSearcher()
 
     def retrieval(self, query, history, meta):
         refs = {"query": query, "history": history, "meta": meta}
         refs["model_name"] = config.model_name
         refs["entities"] = self.reco_entities(query, history, refs)
         refs["knowledge_base"] = self.query_knowledgebase(query, history, refs)
-        refs["graph_base"] = self.query_graph(query, history, refs)
+        refs["graph_base"] = self.query_graph(query, history, refs) #知识库
         refs["web_search"] = self.query_web(query, history, refs)
 
         return refs

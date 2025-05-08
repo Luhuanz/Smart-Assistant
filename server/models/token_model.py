@@ -22,3 +22,4 @@ class AgentToken(Base):
             "token": self.token,
             "created_at": self.created_at.isoformat() if self.created_at else None
         }
+

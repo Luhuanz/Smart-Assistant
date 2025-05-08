@@ -23,7 +23,7 @@ logger = LogManager()
 router = APIRouter(tags=["tools","agent"])
 
 #
-# —— 1. /tools 前缀：工具列表 + 文件分块 + PDF→文本
+# —— 1./tools前缀：工具列表+文件分块+PDF→文本
 #
 tools_router = APIRouter(prefix="/tools", tags=["tools"])
 

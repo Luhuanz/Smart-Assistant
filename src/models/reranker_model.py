@@ -123,7 +123,7 @@ if __name__ == '__main__':
     reranker = RerankerWrapper(
         reranker_key="local/bge-reranker-v2-m3",
         model_name="bge-reranker-v2-m3",
-        local_path="/data/Langagent/resources/models/bge-reranker-v2-m3"
+        local_path="/data/temp1/Smart-Assistant-main/resources/models/bge-reranker-v2-m3"
     )
     # Flagembedding
     # reranker = RerankerWrapper(

@@ -169,7 +169,7 @@ async def chat_agent(
         # 1) init
         yield make_chunk(status="init")
 
-        # 2) 执行你的 agent
+        # 2) 执行agent
         try:
             final_answer = ""
             # 假设它是 async generator of strings

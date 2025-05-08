@@ -1,0 +1,20 @@
+[2025-05-08 15:14] [logger.py|_log] [line:74] INFO    : Loading config from saves/config/base.yaml
+[2025-05-08 15:14] [logger.py|_log] [line:76] WARNING : 提醒：MODEL_DIR （D:/Huggingface） 不存在，如果未配置，请忽略，如果配置了，请检查是否配置正确，比如 docker-compose 文件中的映射
+[2025-05-08 15:14] [logger.py|_log] [line:74] INFO    : Milvus 已连接: http://localhost:19530
+[2025-05-08 15:14] [logger.py|_log] [line:74] INFO    : Milvus 已连接: http://localhost:19530
+[2025-05-08 15:14] [logger.py|_log] [line:74] INFO    : Milvus 已连接: http://localhost:19530
+[2025-05-08 15:17] [logger.py|_log] [line:74] INFO    : Loading config from saves/config/base.yaml
+[2025-05-08 15:17] [logger.py|_log] [line:76] WARNING : 提醒：MODEL_DIR （D:/Huggingface） 不存在，如果未配置，请忽略，如果配置了，请检查是否配置正确，比如 docker-compose 文件中的映射
+[2025-05-08 15:17] [logger.py|_log] [line:74] INFO    : Milvus 已连接: http://localhost:19530
+[2025-05-08 15:17] [logger.py|_log] [line:74] INFO    : Milvus 已连接: http://localhost:19530
+[2025-05-08 15:17] [logger.py|_log] [line:74] INFO    : Milvus 已连接: http://localhost:19530
+[2025-05-08 15:18] [logger.py|_log] [line:74] INFO    : Loading config from saves/config/base.yaml
+[2025-05-08 15:18] [logger.py|_log] [line:76] WARNING : 提醒：MODEL_DIR （D:/Huggingface） 不存在，如果未配置，请忽略，如果配置了，请检查是否配置正确，比如 docker-compose 文件中的映射
+[2025-05-08 15:18] [logger.py|_log] [line:74] INFO    : Milvus 已连接: http://localhost:19530
+[2025-05-08 15:18] [logger.py|_log] [line:74] INFO    : Milvus 已连接: http://localhost:19530
+[2025-05-08 15:18] [logger.py|_log] [line:74] INFO    : Milvus 已连接: http://localhost:19530
+[2025-05-08 15:19] [logger.py|_log] [line:74] INFO    : Loading config from saves/config/base.yaml
+[2025-05-08 15:19] [logger.py|_log] [line:76] WARNING : 提醒：MODEL_DIR （D:/Huggingface） 不存在，如果未配置，请忽略，如果配置了，请检查是否配置正确，比如 docker-compose 文件中的映射
+[2025-05-08 15:19] [logger.py|_log] [line:74] INFO    : Milvus 已连接: http://localhost:19530
+[2025-05-08 15:19] [logger.py|_log] [line:74] INFO    : Milvus 已连接: http://localhost:19530
+[2025-05-08 15:19] [logger.py|_log] [line:74] INFO    : Milvus 已连接: http://localhost:19530

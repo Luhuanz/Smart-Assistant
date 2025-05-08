@@ -22,7 +22,6 @@ python-pptx
 datrie
 hanziconv
 nltk
-
 opencv-python
 onnxruntime
 pyclipper
@@ -33,8 +32,10 @@ py2neo
 langchain-chroma
 langchain-graphrag
 pyarrow
+transformers==4.35.2
 tavily-python
 FlagEmbedding
+peft
 dashscope
 pymysql
 sqlalchemy
@@ -43,5 +44,3 @@ pydantic
 langchain_ollama
 faker
 langchain_experimental
-peft==0.10.0
-transformers==4.37.2

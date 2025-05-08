@@ -140,14 +140,14 @@ class EntityRecognitionSingleton:
         self.model = Bert_Model(self.model_name, hidden_size, len(self.tag2idx), bi)
 
         if os.path.exists(self.pt_path):
-            print("加载已有模型")
+            # print("加载已有模型")
             self.model.load_state_dict(torch.load(self.pt_path, map_location=self.device))
         else:
             raise FileNotFoundError("未找到模型权重文件!!")
 
         self.model = self.model.to(self.device)
 
-        print('模型初始化完成 ......')
+        # print('模型初始化完成 ......')
 
     def ner(self, question):
         return get_ner_result(self.model, self.tokenizer, question, self.rule, self.tfidf_r, self.device, self.idx2tag)

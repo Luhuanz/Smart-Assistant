@@ -25,7 +25,7 @@ from .operators import preprocess
 resource_dir = os.path.abspath(
     os.path.join(os.path.dirname(__file__), "../../resources/data_parser/qieci")
 )
-print(resource_dir)
+# print(resource_dir)
 
 
 def get_default_resource_dir():

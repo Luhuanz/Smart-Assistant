@@ -9,10 +9,10 @@ from pymilvus import MilvusClient, MilvusException
 
 from src import config
 from src.utils import  hashstr
-from rag.core.indexing import   chunk_file
+from rag.core.indexing import  chunk_file
 from src.stores.kb_db_manager import kb_db_manager
 from src.utils.logger import LogManager
-logger=LogManager()
+logger= LogManager()
 # 知识库管理
 class KnowledgeBase:
     """
@@ -68,15 +68,15 @@ class KnowledgeBase:
         conf = embedding_config or config
         self.embed_model = get_embedding_model(conf)
         if config.enable_reranker:
-            from src.models.reranker_model import RerankerWrapper
-            self.reranker =  RerankerWrapper("siliconflow/bge-reranker-v2-m3", model_name="BAAI/bge-reranker-v2-m3")
+            from src.models.reranker_model import  RerankerWrapper
+            self.reranker = RerankerWrapper("siliconflow/bge-reranker-v2-m3", model_name="BAAI/bge-reranker-v2-m3")
         else:
             self.reranker = None
 
     # -- Milvus 连接 --------------------------------------------------------
     def _connect_milvus(self, uri: Optional[str]):
         try:
-            target = uri or os.getenv("MILVUS_URI", config.get("milvus_uri", "http://milvus:19530"))
+            target = uri or os.getenv("MILVUS_URI", config.get("milvus_uri", "http://localhost:19530"))
             self.client = MilvusClient(uri=target)
             self.client.list_collections()
             logger.info(f"Milvus 已连接: {target}")
@@ -144,7 +144,6 @@ class KnowledgeBase:
             if ext == 'pdf' or do_ocr:
                 docs = chunk_file(path, chunk_size, chunk_overlap, True, ocr_det_threshold)
             else:
-
                 docs = chunk_file(path, chunk_size, chunk_overlap)
         except Exception as e:
             logger.error(f"分块失败: {e}")

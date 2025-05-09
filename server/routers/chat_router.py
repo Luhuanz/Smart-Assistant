@@ -31,6 +31,8 @@ def convert_messages_to_dicts(messages: List[BaseMessage]) -> List[Dict[str, str
         "system": "system",
     }
     result: List[Dict[str, str]] = []
+    if not messages:
+        return []
     for msg in messages:
         role = getattr(msg, "_type", None)          # '_type' is 'human' / 'ai' / 'system'
         result.append({

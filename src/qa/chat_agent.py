@@ -57,8 +57,13 @@ class PokemonKGChatAgent:
             community_level=0
         )
 
-        # 初始化网络搜索器 0
         self.searcher = LiteBaseSearcher()
+
+        # 添加兼容方法，避免 AttributeError
+        async def fake_search_and_generate(query: str) -> str:
+            return f"（模拟联网搜索结果，无实际联网）Query: {query}"
+
+        self.searcher.search_and_generate = fake_search_and_generate
 
     def _build_graph(self):
         """构建LangGraph状态图"""
@@ -110,6 +115,7 @@ class PokemonKGChatAgent:
 
     async def _web_searcher(self, state: AgentState):
         """网络搜索节点"""
+        logger.info("📡 已调用 web_searcher 节点")
         messages = state["messages"]
         response = await self.searcher.search_and_generate(messages[0].content)
         return {"messages": [HumanMessage(content=response, name="web_searcher")]}

@@ -66,3 +66,5 @@ CONFIG = {
     'MODEL_RERANKER_PATH': MODEL_RERANKER_PATH
 
 }
+NEO4J_URI = "bolt://localhost:7687"
+NEO4J_AUTH = ("neo4j", "tczaslw278")  # 替换为实际认证信息

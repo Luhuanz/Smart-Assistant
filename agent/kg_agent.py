@@ -20,10 +20,8 @@ project_root = current_dir.parent.resolve()
 sys.path.insert(0, str(project_root))
 
 # ---------- Neo4j 连接 ----------
-NEO4J_URI = "bolt://localhost:7687"
-NEO4J_AUTH = ("neo4j", "tczaslw278")  # 替换为实际认证信息
-g = Graph(NEO4J_URI, auth=NEO4J_AUTH)
 
+g = Graph(NEO4J_URI, auth=NEO4J_AUTH)
 
 
 # ========== 子图提取器 ==========

@@ -76,7 +76,13 @@ class KnowledgeBase:
     # -- Milvus 连接 --------------------------------------------------------
     def _connect_milvus(self, uri: Optional[str]):
         try:
-            target = uri or os.getenv("MILVUS_URI", config.get("milvus_uri", "http://localhost:19530"))
+            # 优先使用函数参数 -> 再看环境变量 -> 再看 config 默认值
+            target = uri or os.getenv("MILVUS_URI") or config.get("milvus_uri", "http://localhost:19530")
+
+            # 自动补 http:// 前缀，防止只写了 localhost:19530
+            if not target.startswith("http://") and not target.startswith("https://"):
+                target = "http://" + target
+
             self.client = MilvusClient(uri=target)
             self.client.list_collections()
             logger.info(f"Milvus 已连接: {target}")

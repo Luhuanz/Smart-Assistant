@@ -8,12 +8,12 @@ from fastapi import APIRouter, Body, HTTPException
 from fastapi.responses import StreamingResponse
 from langchain.schema import BaseMessage, HumanMessage, AIMessage, SystemMessage
 
-from src import executor, config, retriever
+from src import executor, config, get_retriever
 from rag.core import HistoryManager
 from src.models import select_model
 from src.utils.logger import LogManager
 from src.qa import PokemonKGChatAgent
-
+retriever = get_retriever()
 logger = LogManager()
 kg_chat_agent = PokemonKGChatAgent()
 
@@ -24,24 +24,26 @@ chat = APIRouter(prefix="/chat")
 # ---------------------------------------------------------
 
 def convert_messages_to_dicts(messages: List[BaseMessage]) -> List[Dict[str, str]]:
-    """Convert LangChain Message objects to dicts accepted by most LLM APIs."""
+    """Convert LangChain Message objects to plain dicts that can be JSON-encoded."""
     role_map = {
         "human": "user",
         "ai": "assistant",
         "system": "system",
     }
-    result = []
+    result: List[Dict[str, str]] = []
     for msg in messages:
-        role = getattr(msg, "_type", None)  # _type is 'human'/'ai'/'system'
+        role = getattr(msg, "_type", None)          # '_type' is 'human' / 'ai' / 'system'
         result.append({
             "role": role_map.get(role, "user"),
-            "content": msg.content
+            "content": msg.content,
         })
     return result
 
 
-def make_chunk(meta: Dict[str, Any], content: Optional[str] = None, **kwargs) -> bytes:
-    """统一的 SSE / chunk 打包函数"""
+def make_chunk(meta: Dict[str, Any],
+               content: Optional[str] = None,
+               **kwargs) -> bytes:
+    """统一的 SSE / chunk 打包函数（返回 bytes 行）"""
     payload = {
         "response": content,
         "meta": meta,
@@ -64,14 +66,14 @@ async def chat_get():
 
 @chat.post("/")
 async def chat_post(
-    query: str = Body(...),
-    meta: Dict[str, Any] = Body({}),
-    history: Optional[List[Dict[str, Any]]] = Body(None),
-    thread_id: Optional[str] = Body(None),
+        query: str = Body(...),
+        meta: Dict[str, Any] = Body({}),
+        history: Optional[List[Dict[str, Any]]] = Body(None),
+        thread_id: Optional[str] = Body(None),
 ):
-    """主聊天接口，支持流式返回"""
+    """主聊天接口，支持 **流式** 返回"""
 
-    # 1. 选择模型
+    # 1. 选择模型 ----------------------------------------------------------------
     model = select_model()
     if model is None:
         raise HTTPException(status_code=500, detail="没有可用的模型，请检查模型配置")
@@ -81,51 +83,72 @@ async def chat_post(
 
     logger.debug(f"Received query: {query} with meta: {meta}")
 
+    # ---------------------------------------------------------------------------
     async def generate_response():
         modified_query = query
         refs = None
 
-        # 2. 检索阶段
+        # 2. 检索阶段 -------------------------------------------------------------
         if meta and need_retrieve(meta):
             yield make_chunk(meta, status="searching")
             try:
-                modified_query, refs = retriever(modified_query, history_manager.history.messages, meta)
+
+                modified_query, refs = retriever(
+                    modified_query,
+                    history_manager.history.messages,
+                    meta
+                )
             except Exception as e:
                 logger.error(f"Retriever error: {e}\n{traceback.format_exc()}")
-                yield make_chunk(meta, message=f"Retriever error: {e}", status="error")
+                yield make_chunk(meta,
+                                 message=f"Retriever error: {e}",
+                                 status="error")
                 return
             yield make_chunk(meta, status="generating")
 
-        # 3. 构造 Prompt
-        messages = history_manager.get_history_with_msg(modified_query, max_rounds=meta.get("history_round"))
-        history_manager.add_user(query)  # 把原始用户查询加入历史
-
+        # 3. 构造 Prompt ---------------------------------------------------------
+        messages = history_manager.get_history_with_msg(
+            modified_query,
+            max_rounds=meta.get("history_round")
+        )
+        history_manager.add_user(query)                    # 把原始用户查询加入历史
         formatted_messages = convert_messages_to_dicts(messages)
 
         content = ""
         reasoning_content = ""
         try:
             for delta in model.predict(formatted_messages, stream=True):
-                # 部分模型把思考过程放在 reasoning_content
+                # 一些模型将「思考过程」放在 reasoning_content
                 if not delta.content and hasattr(delta, "reasoning_content"):
                     reasoning_content += delta.reasoning_content or ""
-                    yield make_chunk(meta, reasoning_content=reasoning_content, status="reasoning")
+                    yield make_chunk(meta,
+                                     reasoning_content=reasoning_content,
+                                     status="reasoning")
                     continue
 
-                # 累积内容
                 content += delta.content or ""
                 yield make_chunk(meta, content=delta.content, status="loading")
 
             logger.debug(f"Final response: {content}")
             logger.debug(f"Final reasoning response: {reasoning_content}")
 
+            # 4. 更新历史，发送最终块 --------------------------------------------
             updated_history = history_manager.update_ai(content)
-            yield make_chunk(meta, status="finished", history=updated_history, refs=refs)
+            # ★ 将 LangChain Message → 可序列化 list[dict] ★
+            history_serializable = convert_messages_to_dicts(updated_history)
+
+            yield make_chunk(meta,
+                             status="finished",
+                             history=history_serializable,
+                             refs=refs)
         except Exception as e:
             logger.error(f"Model error: {e}\n{traceback.format_exc()}")
-            yield make_chunk(meta, message=f"Model error: {e}", status="error")
+            yield make_chunk(meta,
+                             message=f"Model error: {e}",
+                             status="error")
 
-    return StreamingResponse(generate_response(), media_type="application/json")
+    return StreamingResponse(generate_response(),
+                             media_type="application/json")
 
 
 @chat.post("/call")
@@ -200,7 +223,11 @@ async def chat_agent(
         history_mgr = HistoryManager()
         history_mgr.add_user(query)
         history_mgr.add_ai(final_answer)
-        yield make_agent_chunk(status="finished", content=final_answer, history_resp=history_mgr.history.messages)
+        yield make_agent_chunk(
+            status="finished",
+            content=final_answer,
+            history_resp=convert_messages_to_dicts(history_mgr.history.messages)
+        )
 
     return StreamingResponse(streamer(), media_type="application/json")
 

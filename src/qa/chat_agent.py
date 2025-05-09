@@ -17,9 +17,7 @@ project_root = Path(__file__).parent.parent.resolve()
 sys.path.insert(0, str(project_root))
 
 # 本地模块导入
-from agent.kg_agent import KGQueryAgent
 from rag import GraphRAG
-# from api.websearch.Searcher import WebSearcher
 from api.websearch.websearcher import *
 
 base_path = Path(__file__).parent.parent.parent  # Smart-Assistant 根目录
@@ -48,9 +46,10 @@ class PokemonKGChatAgent:
         self.llm = ChatOpenAI( model=self.model_name,
             base_url=self.openai_base_url,
             api_key=self.openai_api_key)
-
-        # 初始化知识图谱查询代理 1
+        from agent.kg_agent import KGQueryAgent
         self.kgsql_agent = KGQueryAgent(llm=self.llm)
+        # 初始化知识图谱查询代理 1
+
 
         # 初始化图RAG 1
         self.graph_rag = GraphRAG(

@@ -2,10 +2,10 @@ from fastapi import Request, Body
 from fastapi import APIRouter
 
 base = APIRouter()
-from src import config, retriever, knowledge_base, graph_base
+from src import config, get_retriever, knowledge_base
 from agent.kg_agent import KGQueryAgent
 kg_agent = KGQueryAgent()        # Neo4j 图谱检索器
-
+retriever = get_retriever()
 
 @base.get("/")
 async def route_index():

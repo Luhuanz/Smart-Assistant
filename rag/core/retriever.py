@@ -4,7 +4,6 @@ from src.models.reranker_model import RerankerWrapper
 from src.utils.logger import LogManager
 from src.models import select_model
 from rag.core.prompts import *
-from agent.kg_agent import KGQueryAgent # 知识图谱
 from src.stores import  KnowledgeBase
 from rag.core.operators import HyDEOperator
 import asyncio, inspect
@@ -12,12 +11,14 @@ knowledge_base = KnowledgeBase()
 
 _log = LogManager()
 
-
+def get_kg_agent():
+    from agent.kg_agent import KGQueryAgent
+    return KGQueryAgent()
 class Retriever:
 
     def __init__(self):
         self._load_models()
-        self.kg_agent = KGQueryAgent()
+        self.kg_agent = get_kg_agent()
         self.default_distance_threshold = config.get("default_distance_threshold", 0.5)
         self.top_k = config.get("default_top_k", 10)
 

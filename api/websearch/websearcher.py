@@ -3,25 +3,29 @@ import logging
 import asyncio
 from abc import ABC, abstractmethod
 from typing import Dict, List, Optional, Any
+
 from configs.settings import *
 
 logger = logging.getLogger("WebSearcher")
 logger.setLevel(logging.INFO)
 
+# ---------------------------------------------------------------------------
+# 抽象基类
+# ---------------------------------------------------------------------------
 
-# ---------- 抽象基类 ----------
 class BaseWebSearcher(ABC):
     """所有搜索器统一接口：同步 search(query) -> List[dict]"""
-
     @abstractmethod
     def search(self, query: str, top_k: int = 5) -> List[Dict[str, Any]]:
-        """执行网络搜索，返回结构化结果列表"""
         raise NotImplementedError
 
 
-# ---------- Tavily ----------
+# ---------------------------------------------------------------------------
+# Tavily
+# ---------------------------------------------------------------------------
+
 class TavilyBasicSearcher(BaseWebSearcher):
-    """使用 Tavily API 进行搜索（同步实现）"""
+    """使用 Tavily API 进行搜索（完全同步实现）"""
 
     def __init__(self, api_key: Optional[str] = None):
         from tavily import TavilyClient
@@ -36,10 +40,11 @@ class TavilyBasicSearcher(BaseWebSearcher):
             return []
 
         try:
-            # search_depth: "basic" / "deep"
-            raw = self.client.search(query=query,
-                                     max_results=top_k,
-                                     search_depth="basic")
+            raw = self.client.search(
+                query=query,
+                max_results=top_k,
+                search_depth="basic"
+            )
         except Exception as e:
             logger.error(f"Tavily 搜索异常: {e}")
             return []
@@ -59,26 +64,35 @@ class TavilyBasicSearcher(BaseWebSearcher):
         ]
 
 
-# ---------- Lite 基础搜索 ----------
-class LiteBaseSearcher(BaseWebSearcher):
-    """
-    使用你已有的 async search() 工具，但对外暴露同步接口
-    """
+# ---------------------------------------------------------------------------
+# Lite 基础搜索  ——  用 async 搜索工具，但对外提供同步接口
+# ---------------------------------------------------------------------------
 
+class LiteBaseSearcher(BaseWebSearcher):
     def __init__(self, some_config: Optional[Any] = None):
         pass
+
+    def _run_sync(self, coro):
+        """在任意环境下安全执行协程，返回结果"""
+        try:
+            loop = asyncio.get_running_loop()
+            # FastAPI / Uvicorn 等环境已经在事件循环中
+            future = asyncio.run_coroutine_threadsafe(coro, loop)
+            return future.result()
+        except RuntimeError:
+            # 当前线程没有事件循环（脚本、子线程等）
+            return asyncio.run(coro)
 
     def search(self, query: str, top_k: int = 5) -> List[Dict[str, Any]]:
         logger.info(f"[LiteWebSearcher] Searching for: {query} (top_k={top_k})")
         if not query.strip():
             return []
 
-        # 引入异步工具函数
-        from api.websearch.utils import search  # <-- async def search(q, k) -> list
+        # 异步搜索工具
+        from api.websearch.utils import search      # async def search(q, k) -> list
 
         try:
-            # 直接在当前线程里跑完协程，拿到结果
-            raw_results = asyncio.run(search(query, top_k))
+            raw_results = self._run_sync(search(query, top_k))
         except Exception as e:
             logger.error(f"LiteWebSearcher 搜索异常: {e}")
             return []
@@ -93,20 +107,15 @@ class LiteBaseSearcher(BaseWebSearcher):
         ]
 
 
-# ---------- 简单自测 ----------
+# ---------------------------------------------------------------------------
+# 简单自测
+# ---------------------------------------------------------------------------
+
 if __name__ == "__main__":
     query_text = "皮卡丘进化是什么？"
 
-    # Tavily
     tavily_searcher = TavilyBasicSearcher(api_key=TAVILY_API_KEY)
-    tavily_results = tavily_searcher.search(query_text, top_k=3)
-    print("=== Tavily 搜索结果 ===")
-    for i, item in enumerate(tavily_results, 1):
-        print(f"{i}. {item['title']}  |  {item['url']}")
+    print("[Tavily] ->", tavily_searcher.search(query_text, top_k=3))
 
-    # Lite
     lite_searcher = LiteBaseSearcher()
-    lite_results = lite_searcher.search(query_text, top_k=3)
-    print("\n=== LiteWebSearcher 搜索结果 ===")
-    for i, item in enumerate(lite_results, 1):
-        print(f"{i}. {item['title']}  |  {item['url']}")
+    print("[Lite]   ->", lite_searcher.search(query_text, top_k=3))

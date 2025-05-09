@@ -41,7 +41,7 @@ class KnowledgeBase:
         self.default_rerank_threshold = config.get("default_rerank_threshold", 0.1)
         self.default_max_query_count = config.get("default_max_query_count", 20)
         self.top_k = config.get("default_top_k", 10)
-
+        self.conf=0
         # 初始化模型与服务
         self._check_migration()
         self._load_embedding_model(embedding_config)
@@ -65,8 +65,10 @@ class KnowledgeBase:
             self.embed_model = None
             return
         from src.models.embedding import get_embedding_model
-        conf = embedding_config or config
-        self.embed_model = get_embedding_model(conf)
+
+        # conf ="local/bge-large-zh-v1.5" or embedding_config or config
+        self.conf = "local/bge-large-zh-v1.5"
+        self.embed_model = get_embedding_model(self.conf)
         if config.enable_reranker:
             from src.models.reranker_model import  RerankerWrapper
             self.reranker = RerankerWrapper("siliconflow/bge-reranker-v2-m3", model_name="BAAI/bge-reranker-v2-m3")
@@ -98,7 +100,7 @@ class KnowledgeBase:
             db_id=db_id,
             name=name,
             description=description,
-            embed_model=self.embed_model.embed_model_fullname,
+            embed_model=self.conf,
             dimension=dim
         )
         self._ensure_directories(db_id)

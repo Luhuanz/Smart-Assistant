@@ -1,5 +1,8 @@
+from typing import List
+
 from langchain.schema import AIMessage, HumanMessage, SystemMessage
 from langchain.memory import ChatMessageHistory
+from langchain_core.messages import BaseMessage
 
 from rag.core.prompts import get_system_prompt
 from src.utils import logger
@@ -37,17 +40,16 @@ class HistoryManager:
         """
         self.history.add_message(AIMessage(content=content))
 
-    def update_ai(self, content: str):
+    def update_ai(self, content: str) -> List[BaseMessage]:
         """
         更新对话历史中最近一条AI消息的内容。如果最近一条消息不是AI消息，则添加新AI消息。
         :param content: 更新后的 AI 文本内容
         """
         if self.history.messages and isinstance(self.history.messages[-1], AIMessage):
-            # 用更新的内容替换最后一条AI消息
             self.history.messages[-1] = AIMessage(content=content)
         else:
-            # 如果最后一条不是AI消息，则直接添加一条新的AI消息
             self.add_ai(content)
+        return self.history.messages
 
     def get_history_with_msg(self, msg: str, role: str = "user", max_rounds: int = None):
         """

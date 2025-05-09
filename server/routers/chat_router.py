@@ -25,14 +25,15 @@ chat = APIRouter(prefix="/chat")
 
 def convert_messages_to_dicts(messages: List[BaseMessage]) -> List[Dict[str, str]]:
     """Convert LangChain Message objects to plain dicts that can be JSON-encoded."""
+    if not messages:
+        return []
     role_map = {
         "human": "user",
         "ai": "assistant",
         "system": "system",
     }
     result: List[Dict[str, str]] = []
-    if not messages:
-        return []
+
     for msg in messages:
         role = getattr(msg, "_type", None)          # '_type' is 'human' / 'ai' / 'system'
         result.append({
@@ -46,12 +47,18 @@ def make_chunk(meta: Dict[str, Any],
                content: Optional[str] = None,
                **kwargs) -> bytes:
     """统一的 SSE / chunk 打包函数（返回 bytes 行）"""
+    def convert(obj):
+        if isinstance(obj, BaseMessage):
+            return {"role": getattr(obj, "_type", "user"), "content": obj.content}
+        raise TypeError(f"Object of type {obj.__class__.__name__} is not JSON serializable")
+
     payload = {
         "response": content,
         "meta": meta,
         **kwargs,
     }
-    return json.dumps(payload, ensure_ascii=False).encode("utf-8") + b"\n"
+    return json.dumps(payload, ensure_ascii=False, default=convert).encode("utf-8") + b"\n"
+
 
 
 def need_retrieve(meta: Dict[str, Any]) -> bool:
@@ -108,7 +115,7 @@ async def chat_post(
                 return
             yield make_chunk(meta, status="generating")
 
-        # 3. 构造 Prompt ---------------------------------------------------------
+        # 3. 构造 Prompt ----
         messages = history_manager.get_history_with_msg(
             modified_query,
             max_rounds=meta.get("history_round")
@@ -134,9 +141,8 @@ async def chat_post(
             logger.debug(f"Final response: {content}")
             logger.debug(f"Final reasoning response: {reasoning_content}")
 
-            # 4. 更新历史，发送最终块 --------------------------------------------
+            # 4. 更新历史，发送最终块
             updated_history = history_manager.update_ai(content)
-            # ★ 将 LangChain Message → 可序列化 list[dict] ★
             history_serializable = convert_messages_to_dicts(updated_history)
 
             yield make_chunk(meta,
@@ -162,7 +168,7 @@ async def call(query: str = Body(...), meta: Dict[str, Any] = Body({})):
 
     loop = asyncio.get_event_loop()
     response = await loop.run_in_executor(executor, model.predict, query)
-    logger.debug({"query": query, "response": response.content})
+    logger.debug(f"query: {query}, response: {response.content}")
     return {"response": response.content}
 
 
@@ -179,7 +185,7 @@ async def call_lite(query: str = Body(...), meta: Dict[str, Any] = Body({})):
         return await loop.run_in_executor(executor, model.predict, q)
 
     response = await _predict_async(query)
-    logger.debug({"query": query, "response": response.content})
+    logger.debug(f"query: {query}, response: {response.content}")
     return {"response": response.content}
 
 

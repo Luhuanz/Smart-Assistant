@@ -7,8 +7,8 @@ from sqlalchemy.orm.attributes import instance_state
 
 from configs.settings import *
 from src.models.kb_models import Base, KnowledgeDatabase, KnowledgeFile, KnowledgeNode
-from src.utils import logger
-
+from src.utils.logger import LogManager
+logger=LogManager()
 class KBDBManager:
     """知识库数据库管理器"""
 

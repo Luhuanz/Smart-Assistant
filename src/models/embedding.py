@@ -180,7 +180,8 @@ def get_embedding_model(config) -> Union[BaseEmbeddingModel, None]:
         return None
     _log.debug(f"Loading embedding model: {config.embed_model}")
     provider, _ = config.embed_model.split('/', 1)
-
+    print(provider)
+    exit()
     if provider.lower() == "local":
         return LocalEmbeddingModel(config)
     elif provider.lower() == "ollama":
@@ -196,9 +197,9 @@ if __name__ == "__main__":
         # 启用知识库功能
         enable_knowledge_base = True
         # 指定 embedding 模型，格式为 "provider/bge-large-zh-v1.5"，此处选择本地模型
-        # embed_model = "local/bge-large-zh-v1.5"
+        embed_model = "local/bge-large-zh-v1.5"
         # embed_model = "ollama/bge-m3:latest"
-        embed_model = "openai/bge-m3-pro"
+        # embed_model = "openai/bge-m3-pro"
 
 
     # 创建配置实例
